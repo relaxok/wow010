@@ -557,7 +557,7 @@ struct M2
     } attachments[ header.nAttachments ];
 
     FSeek( header.ofsAttachLookup + startPos );
-    uint16 attachment_lookups[ header.nAttachLookup ];
+    int16 attachment_lookups[ header.nAttachLookup ];
     
     // Events
     FSeek( header.ofsEvents + startPos );
