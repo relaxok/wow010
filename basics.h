@@ -12,8 +12,8 @@ typedef struct
   unsigned char _0;
   unsigned char _1;
   unsigned char _2;
-} int24<read=read_int24, optimize=false, size=3>;
-int value_int24 (int24& ref)
+} int24_t<read=read_int24_t, optimize=false, size=3>;
+int value_int24_t (int24_t& ref)
 {
   int _0 = ref._0;
   int _1 = ref._1;
@@ -25,10 +25,10 @@ int value_int24 (int24& ref)
   }
   return combined;
 }
-string read_int24 (int24& ref)
+string read_int24_t (int24_t& ref)
 {
   string a;
-  SPrintf (a, "%i", value_int24 (ref));
+  SPrintf (a, "%i", value_int24_t (ref));
   return a;
 }
 
@@ -109,7 +109,14 @@ string bitmaskread(bitmask& mask)
   int i = 0;
   for (i = 0; i < 32; ++i)
   {
-    SPrintf(a, "%s%c", a, (mask.data & (1<<i) ? '1' : '0');
+    if (mask.data & (1<<i))
+    {
+      SPrintf (a, "%s1", a);
+    }
+    else
+    {
+      SPrintf (a, "%s0", a);
+    }
   }
   return a;
 }
