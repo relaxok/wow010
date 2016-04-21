@@ -121,6 +121,7 @@ XPAC SetXpac( uint32 Version )
 struct M2
 {
     // Legion chunk?
+    startPos = FTell();
     uint32 magic <hidden=true>;
     if( magic == 0x3132444D ) // MD21
     {
@@ -131,7 +132,6 @@ struct M2
     }
     else
     {
-        startPos = FTell();
         Assert( magic == 0x3032444D, "only MD20 here!");
     }
         
