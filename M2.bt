@@ -1,0 +1,767 @@
+// M2 010 Template
+//
+// The goal is to make this template work with any version of .M2, but legacy
+// stuff needs a lot of work.
+//
+// Last checked against Legion 7.0.3.21491
+//
+// contributors:
+// relaxok
+//
+//
+//
+//
+
+struct uv
+{
+    float u;
+    float v;
+};
+
+struct vec2
+{
+    float x;
+    float y;
+};
+
+struct vec3
+{
+    float x;
+    float y;
+    float z;
+};
+
+struct vec4
+{
+    float x;
+    float y;
+    float z;
+    float w;
+};
+
+struct M2Array
+{
+   uint32 number;
+   uint32 offset_elements;
+ };
+
+struct M2TrackHead
+{
+    enum<uint16>
+    {
+        NO_INTERPOLATION,
+        LINEAR,
+        HERMITE,
+        BEZIER,
+    } interpolation_type;
+    int16 global_sequence;
+};
+struct M2TrackBase
+{
+    M2TrackHead header;
+    uint32 nTimelinesForTimestamps;
+	uint32 ofsTimelinesForTimestamps;
+};
+
+struct M2Track
+{
+    M2TrackHead header;
+    uint32 nTimelinesForTimestamps;
+	uint32 ofsTimelinesForTimestamps;
+	uint32 nTimelinesForKeys;
+	uint32 ofsTimelinesForKeys;
+};
+
+struct M2TrackNoHeader
+{
+    uint32 nTimelinesForTimestamps;
+	uint32 ofsTimelinesForTimestamps;
+	uint32 nTimelinesForKeys;
+	uint32 ofsTimelinesForKeys;
+};
+
+local int startPos = 0;
+
+string get_tex_name( int offset )
+{
+    FSeek( offset + startPos );
+    return ReadString( FTell() );
+}
+
+string get_m2array_filename( M2Array& arr )
+{
+    FSeek( arr.offset_elements + startPos );
+    return ReadString( FTell() );
+}
+
+enum XPAC
+{
+    CLASSIC,
+    TBC,
+    WOTLK,
+    CATA,
+    MOP,
+    WOD,
+    LEGION,
+};
+    
+local XPAC xpac;
+
+XPAC SetXpac( uint32 Version )
+{
+    if( Version > 274 ) return LEGION;
+    if( Version > 272 ) return WOD;
+    if( Version == 272 ) return MOP;
+    if( Version > 265 ) return CATA;
+    if( Version == 264 ) return WOTLK;
+    if( Version > 260 ) return TBC;
+    return CLASSIC;
+}
+
+struct M2
+{
+    // Legion chunk?
+    uint32 magic <hidden=true>;
+    if( magic == 0x3132444D ) // MD21
+    {
+        uint32 size <hidden=true>;
+        startPos = FTell();
+        uint32 magic2 <hidden=true>;
+        Assert( magic2 == 0x3032444D, "only MD20 here!");
+    }
+    else
+    {
+        startPos = FTell();
+        Assert( magic == 0x3032444D, "only MD20 here!");
+    }
+        
+    // Header
+    struct
+    {
+	    uint32 Version;	
+        xpac = SetXpac( Version );
+	    uint32 lName;	
+	    uint32 ofsName;
+    
+        struct M2_GLOBAL_MODEL_FLAG
+        {
+            uint32 TILT_X : 1;
+            uint32 TILT_Y : 1;
+            uint32 UNK_0x4 : 1;
+            uint32 HAS_BLENDMODE_OVERRIDES : 1;
+            uint32 UNK_0x10 : 1;
+            uint32 LOAD_PHYSICS_DATA : 1;
+            uint32 UNK_0x40 : 1;
+            uint32 HAS_LOD_SKIN_FILES : 1;
+            uint32 UNK_0x100_CAMERA_RELATED : 1;
+            uint32 UNK_0x200 : 1;
+            uint32 UNK_0x400 : 1;
+            uint32 UNK_0x800 : 1;
+            uint32 UNK_0x1000 : 1;
+            uint32 UNK_0x2000 : 1;
+            uint32 UNK_0x4000 : 1;
+            uint32 UNK_0x8000 : 1;
+        } GlobalModelFlags;
+    
+	    uint32 nGlobalSequences;
+	    uint32 ofsGlobalSequences;	
+	    uint32 nAnimations;
+	    uint32 ofsAnimations;	
+	    uint32 nAnimationLookup;
+	    uint32 ofsAnimationLookup;
+	    uint32 nBones;
+	    uint32 ofsBones;	
+	    uint32 nKeyBoneLookup;
+	    uint32 ofsKeyBoneLookup;	
+	    uint32 nVertices;
+	    uint32 ofsVertices;	
+	    uint32 _nViews_deprecated;	
+	    uint32 nColors;
+	    uint32 ofsColors;
+	    uint32 nTextures;
+	    uint32 ofsTextures;	
+	    uint32 nTextureWeights;
+	    uint32 ofsTextureWeights;
+	    uint32 nUVAnimations;
+	    uint32 ofsUVAnimations;
+	    uint32 nTexReplace;
+	    uint32 ofsTexReplace;	
+	    uint32 nMaterials;
+	    uint32 ofsMaterials;	
+	    uint32 nBoneLookup;
+	    uint32 ofsBoneLookup;	
+	    uint32 nTexLookup;
+	    uint32 ofsTexLookup;
+	    uint32 _nTexUnits_deprecated;
+	    uint32 _ofsTexUnits_deprecated;	
+	    uint32 nTextureWeightsLookup;
+	    uint32 ofsTextureWeightsLookup;	
+	    uint32 nUVAnimLookup;
+	    uint32 ofsUVAnimLookup;	
+	    float  VertexBox[6];	 
+	    float  VertexRadius;	
+	    float  BoundingBox[6];
+	    float  BoundingRadius;
+	    uint32 nBoundingTriangles;
+	    uint32 ofsBoundingTriangles;	
+	    uint32 nBoundingVertices;
+	    uint32 ofsBoundingVertices;
+	    uint32 nBoundingNormals;
+	    uint32 ofsBoundingNormals;
+	    uint32 nAttachments;
+	    uint32 ofsAttachments;	
+	    uint32 nAttachLookup;
+	    uint32 ofsAttachLookup;	
+	    uint32 nEvents;
+	    uint32 ofsEvents;	
+	    uint32 nLights;
+	    uint32 ofsLights;	
+	    uint32 nCameras;	
+	    uint32 ofsCameras;	
+	    uint32 nCameraLookup;
+	    uint32 ofsCameraLookup;	
+	    uint32 nRibbonEmitters;
+	    uint32 ofsRibbonEmitters;	
+	    uint32 nParticleEmitters;
+	    uint32 ofsParticleEmitters;	
+    
+        if( GlobalModelFlags.HAS_BLENDMODE_OVERRIDES )
+        {
+    	    uint32 nBlendModeOverrides;	
+    	    uint32 ofsBlendModeOverrides;	 
+        }
+    } header;
+
+    // Name
+    FSeek( header.ofsName + startPos );
+    char name[ header.lName ];
+
+    // Global Sequences
+    FSeek( header.ofsGlobalSequences + startPos );
+    uint32 global_sequences[ header.nGlobalSequences ];
+
+    // Animations
+    FSeek( header.ofsAnimations + startPos );
+    struct
+    {
+	    uint16 animation_id;
+	    uint16 sub_animation_id;
+	    uint32 length;
+	    float moving_speed;
+    
+        struct
+        {
+	        uint32 SETS_0x80_WHEN_LOADED : 1;
+	        uint32 UNK_0x2	: 1; 
+	        uint32 UNK_0x4	: 1; 
+	        uint32 UNK_0x8 : 1; 
+	        uint32 UNK_0x10 : 1; 
+	        uint32 LOOPED : 1; 
+	        uint32 HAS_NEXT_IS_ALIAS : 1;
+	        uint32 BLENDED_ANIMATION : 1;
+	        uint32 UNK_0x100 : 1; 
+	        uint32 UNK_0x200 : 1; 
+	        uint32 UNK_0x400 : 1; 
+	        uint32 UNK_0x800 : 1; 
+	        uint32 UNK_0x1000 : 1; 
+	        uint32 UNK_0x2000 : 1; 
+	        uint32 UNK_0x4000 : 1; 
+	        uint32 UNK_0x8000 : 1; 
+        } Flags;
+    
+	    int16 probability;
+	    uint16 _padding;
+	    uint32 minimum_repetitions;
+	    uint32 maximum_repetitions;
+	    uint32 blend_time;
+	    vec3 bounds_minimum_extent;
+	    vec3 bounds_maximum_extent;
+	    float bound_radius;
+	    int16 next_animation;
+	    uint16 aliasNext;
+    } animations[ header.nAnimations ];    
+
+    FSeek( header.ofsAnimationLookup + startPos );
+    uint16 animation_lookups[ header.nAnimationLookup ];
+
+    // Bones
+    FSeek( header.ofsBones + startPos );
+    struct
+    {
+        int32 key_bone_id;
+
+        struct
+        {
+	        uint32 UNK_0x1 : 1;
+	        uint32 UNK_0x2 : 1; 
+	        uint32 UNK_0x4 : 1; 
+	        uint32 SPHERICAL_BILLBOARD : 1; 
+	        uint32 CYLINDRICAL_BILLBOARD_LOCK_X : 1; 
+	        uint32 CYLINDRICAL_BILLBOARD_LOCK_Y : 1; 
+	        uint32 CYLINDRICAL_BILLBOARD_LOCK_Z : 1;
+	        uint32 UNK_0x80 : 1;
+	        uint32 UNK_0x100 : 1; 
+	        uint32 TRANSFORMED : 1; 
+	        uint32 KINEMATIC_BONE : 1; 
+	        uint32 UNK_0x800 : 1; 
+	        uint32 HELMET_ANIM_SCALED : 1; 
+        } flags;
+                        
+        int16 parent_bone;
+        uint16 submesh_id;
+        uint16 _unknown[2];
+        M2Track translation; // vec3
+        M2Track rotation; // struct M2CompQuat { int16 val[4]; };
+        M2Track scale; // vec3
+        vec3 pivot;
+    } bones[ header.nBones ];
+
+    FSeek( header.ofsBoneLookup + startPos );
+    uint16 bone_lookups[ header.nBoneLookup ];
+
+    FSeek( header.ofsKeyBoneLookup + startPos ); 
+    enum<int16>
+    {
+        NO_KEY_BONE = -1,
+        ARM_L,
+        ARM_R,
+        SHOULDER_L,
+        SHOULDER_R,
+        SPINE_LOW,
+        WAIST,
+        HEAD,
+        JAW,
+        INDEX_FINGER_R,
+        MIDDLE_FINGER_R,
+        PINKY_FINGER_R,
+        RING_FINGER_R,
+        THUMB_R,
+        INDEX_FINGER_L,
+        MIDDLE_FINGER_L,
+        PINKY_FINGER_L,
+        RING_FINGER_L,
+        THUMB_L,
+        $BTH,
+        $CSR,
+        $CSL,    
+        _BREATH,
+        _NAME,
+        _NAMEMOUNT,
+        $CHD,
+        $CCH,
+        ROOT,
+        WHEEL1,
+        WHEEL2,
+        WHEEL3,
+        WHEEL4,
+        WHEEL5,
+        WHEEL6,
+        WHEEL7,
+        WHEEL8,
+    } key_bone_lookups[ header.nKeyBoneLookup ];          
+    
+    // Vertices
+    FSeek( header.ofsVertices + startPos );
+    struct
+    {
+        vec3 position;
+        ubyte bone_weights[4];
+        ubyte bone_indices[4];
+        vec3 normal;
+        uv texcoords1;
+        uv texcoords2;
+    } vertices[ header.nVertices ];
+
+    // Color/Alpha animations
+    FSeek( header.ofsColors + startPos );
+    struct
+    {
+        M2Track color; // vec3
+        M2Track alpha; // uint16
+    } colors[ header.nColors ];
+
+    // Textures
+    FSeek( header.ofsTextures + startPos );
+    struct
+    {
+        enum<uint32>
+        {
+            GIVEN_IN_FILENAME,
+            BODY_AND_CLOTHES,
+            ITEM,
+            WEAPON_BLADE,
+            WEAPON_HANDLE,
+            ENVIRONMENT,
+            CHARACTER_HAIR,
+            CHARACTER_FACIAL_HAIR,
+            SKIN_EXTRA,
+            UI_SKIN,
+            TAUREN_MANE,
+            CREATURE_SKIN_1,
+            CREATURE_SKIN_2,
+            CREATURE_SKIN_3,
+            ITEM_ICON,
+            GUILD_BACKGROUND_COLOR,
+            GUILD_EMBLEM_COLOR,
+            GUILD_BORDER_COLOR,
+            GUILD_EMBLEM,
+        } type;
+        struct
+        { 
+            uint32 TEXTURE_WRAP_X : 1;
+            uint32 TEXTURE_WRAP_Y : 1;
+        } flags;
+        uint32 lenFilename;
+        uint32 ofsFilename <comment=get_tex_name>;
+    } textures[ header.nTextures ];
+
+    FSeek( header.ofsTexLookup + startPos );
+    uint16 texture_lookups[ header.nTexLookup ];
+
+    FSeek( header.ofsTexReplace + startPos );
+    int16 texture_replacements[ header.nTexReplace ];
+
+    // Texture Weights (was Transparency)
+    FSeek( header.ofsTextureWeights + startPos );
+    M2Track texture_weights[ header.nTextureWeights ]; // uint16
+
+    FSeek( header.ofsTextureWeightsLookup + startPos );
+    uint16 texture_weights_lookup[ header.nTextureWeightsLookup ];
+    
+    // UV Animations
+    FSeek( header.ofsUVAnimations + startPos );
+    struct
+    {
+        M2Track translation; // vec3
+        M2Track rotation; // vec4
+        M2Track scaling; // vec3
+    } uv_animations[ header.nUVAnimations ];
+
+    FSeek( header.ofsUVAnimLookup + startPos );
+    uint16 uv_animation_lookups[ header.nUVAnimLookup ];
+    
+    // Materials (was Render Flags)
+    FSeek( header.ofsMaterials + startPos );
+    struct
+    {
+        struct
+        {
+            uint16 UNLIT : 1;
+            uint16 UNFOGGED : 1;
+            uint16 TWOSIDED : 1;
+            uint16 BILLBOARD : 1;
+            uint16 DISABLE_ZBUFFER : 1;
+            uint16 UNK_0x20 : 1;
+            uint16 UNK_0x40_SHADOW_BATCH_RELATED : 1;
+            uint16 UNK_0x80_SHADOW_BATCH_RELATED : 1;
+            uint16 UNK_0x100 : 1;
+            uint16 UNK_0x200 : 1;
+            uint16 UNK_0x400 : 1;
+            uint16 PREVENT_ALPHA: 1;
+        } flags;
+        enum<uint16>
+        {
+            OPAQUE,
+            MOD,
+            DECAL,
+            ADD,
+            MOD2X,
+            FADE,
+            DEEPRUN_TRAM,
+            UNK_WOD,
+        } blendMode;
+    } materials[ header.nMaterials ];
+    
+    // Bounding Volumes
+    FSeek( header.ofsBoundingVertices + startPos );
+    vec3 bounding_vertices[ header.nBoundingVertices ];
+
+    FSeek( header.ofsBoundingTriangles + startPos );
+    uint16 bounding_triangles[ header.nBoundingTriangles ];
+
+    FSeek( header.ofsBoundingNormals + startPos );
+    vec3 bounding_normals[ header.nBoundingNormals];
+    
+    // Attachments
+    FSeek( header.ofsAttachments + startPos );
+    struct
+    { 
+        enum<uint32>
+        {
+            SHIELD = 0,
+            MOUNTMAIN = 0,
+            ITEM_VISUAL_0 = 0,
+            HAND_RIGHT = 1,
+            ITEM_VISUAL_1 = 1,
+            HAND_LEFT = 2,
+            ITEM_VISUAL_2 = 2,
+            ELBOW_RIGHT = 3,
+            ITEM_VISUAL_3 = 3,
+            ELBOW_LEFT = 4,
+            ITEM_VISUAL_4 = 4,
+            SHOULDER_RIGHT,
+            SHOULDER_LEFT,
+            KNEE_RIGHT,
+            KNEE_LEFT,
+            HIP_RIGHT,
+            HIP_LEFT,
+            HELM,
+            BACK,
+            SHOULDER_FLAP_RIGHT,
+            SHOULDER_FLAP_LEFT,
+            CHEST_BLOOD_FRONT,
+            CHEST_BLOOD_BACK,
+            BREATH,
+            PLAYER_NAME,
+            BASE,
+            HEAD_,
+            SPELL_LEFT_HAND,
+            SPELL_RIGHT_HAND,
+            SPECIAL_1,
+            SPECIAL_2,
+            SPECIAL_3,
+            SHEATH_MAIN_HAND,
+            SHEATH_OFF_HAND,
+            SHEATH_SHIELD,
+            PLAYER_NAME_MOUNTED,
+            LARGE_WEAPON_LEFT,
+            LARGE_WEAPON_RIGHT,
+            HIP_WEAPON_LEFT,
+            HIP_WEAPON_RIGHT,
+            CHEST,
+            HAND_ARROW,
+            BULLET,
+            SPELL_HAND_OMNI,
+            SPELL_HAND_DIRECTED,
+            VEHICLE_SEAT_1,
+            VEHICLE_SEAT_2,
+            VEHICLE_SEAT_3,
+            VEHICLE_SEAT_4,
+            VEHICLE_SEAT_5,
+            VEHICLE_SEAT_6,
+            VEHICLE_SEAT_7,
+            VEHICLE_SEAT_8,
+            LEFT_FOOT,
+            RIGHT_FOOT,
+            SHIELD_NO_GLOVE,
+            SPINE_LOW_,
+            ALTERED_SHOULDER_R,
+            ALTERED_SHOULDER_L,
+            BELT_BUCKLE,
+            SHEATH_CROSSBOW,
+        } id;
+            
+        uint32 bone;
+        vec3 position;
+        M2Track anim; // uchar
+    } attachments[ header.nAttachments ];
+
+    FSeek( header.ofsAttachLookup + startPos );
+    uint16 attachment_lookups[ header.nAttachLookup ];
+    
+    // Events
+    FSeek( header.ofsEvents + startPos );
+    struct
+    {
+	    char identifier[4];
+	    uint32 data;
+	    uint32 bone;
+	    vec3 position;
+        M2TrackBase anim;
+    } events[ header.nEvents ];
+
+    // Lights
+    FSeek( header.ofsLights + startPos );
+    struct 
+    {
+        enum<uint16>
+        {
+            DIRECTIONAL,
+            POINT,
+        } type;
+      
+        int16 bone;
+        vec3 position;
+        M2Track ambient_color; // vec3
+        M2Track ambient_intensity; // float
+        M2Track diffuse_color; // vec3
+        M2Track diffuse_intensity; // float
+        M2Track attenuation_start; // float
+        M2Track attenuation_end; // float
+        M2Track attenuation_unknown; // uchar
+    } lights[ header.nLights ];
+
+    // Cameras
+    FSeek( header.ofsCameras + startPos );
+    struct
+    {
+        enum<int32>
+        {
+            FLYBY_ETC = -1,
+            PORTRAIT,
+            CHARACTER_INFO,
+        } type;
+        if( xpac < CATA )
+        {
+            float fov;
+        }
+        float far_clip;
+        float near_clip;
+        M2Track translation_position; // 3 * 3 floats (spline key)
+        vec3 position;
+        M2Track translation_target; // 3 * 3 floats (spline key)
+        vec3 target;
+        M2Track roll; // float
+        if( xpac >= CATA )
+        {
+            M2Track fov;  // float
+        }
+    } cameras[ header.nCameras ];
+
+    FSeek( header.ofsCameraLookup + startPos );
+    uint16 camera_lookups[ header.nCameraLookup ];
+
+    // Ribbon Emitters
+    FSeek( header.ofsRibbonEmitters + startPos );
+    struct
+    {
+        int32 _unknown0;
+        uint32 bone; 
+        vec3 position;
+        M2Array texture_refs; // uint16
+        M2Array blend_refs; // uint16
+        M2Track color; // vec3
+        M2Track opacity; // uint16;    
+        M2Track height_above; // float
+        M2Track height_below; // float
+        float edgesPerSec; 
+        float edgeLifeSpanInSec;
+        float gravity; 
+        uint16 m_rows; 
+        uint16 m_cols;
+        M2Track texSlot; // uint16
+        M2Track dataEnabled; // uchar
+        uint32 _unknown1;
+    } ribbon_emitters[ header.nRibbonEmitters ];
+
+    // Particle Emitters
+    FSeek( header.ofsParticleEmitters + startPos );
+    struct M2ParticleEmitter
+    {
+        int32 unk0_always_minus_1;
+        struct
+        {
+            uint32 LIT : 1;
+            uint32 UNK_0x2 : 1;
+            uint32 UNK_0x4 : 1;
+            uint32 MOVE_IN_WORLD_SPACE : 1;
+            uint32 DO_NOT_TRAIL : 1;
+            uint32 UNLIT : 1;
+            uint32 UNK_0x40 : 1;
+            uint32 IN_MODEL_SPACE : 1;
+            uint32 UNK_0x100 : 1;
+            uint32 SPAWN_POSITION_RANDOMIZED : 1;
+            uint32 PINNED : 1;
+            uint32 UNK_0x800 : 1;
+            uint32 XY_QUAD : 1;
+            uint32 CLAMP_TO_GROUND : 1;
+            uint32 UNK_0x4000 : 1;
+            uint32 UNK_0x8000 : 1;
+            uint32 CHOOSE_RANDOM_TEXTURE : 1;
+            uint32 OUTWARD : 1;
+            uint32 UNK_INWARD : 1;
+            uint32 SCALE_VARY_XY : 1;
+            uint32 UNK_0x100000 : 1;
+            uint32 RANDOM_FLIP_BOOK_START : 1;
+            uint32 UNK_0x400000 : 1;
+            uint32 COMPRESSED_GRAVITY_VALUES : 1;
+            uint32 BONE_GENERATOR_BONE_NOT_JOINT : 1;  
+            uint32 UNK_0x2000000 : 1;
+            uint32 DO_NOT_THROTTLE_EMISSION_RATE_BASED_ON_DISTANCE : 1;
+            uint32 UNK_0x8000000 : 1;
+            uint32 MULTI_TEXTURING : 1;   
+        } flags;
+
+        vec3 position;
+        uint16 bone;
+        if( flags.MULTI_TEXTURING )
+        {
+            uint16 texture_0 : 5;
+            uint16 texture_1 : 5;
+            uint16 texture_2 : 5;
+            uint16 _ : 1;
+        }
+        else
+        {
+           uint16 texture;
+        }
+            
+        M2Array model_filename <comment=get_m2array_filename>; // uchar
+        M2Array child_emitter_filename <comment=get_m2array_filename>; // uchar
+        enum<ubyte>
+        { 
+            PARTICLE_BLEND_NONE,
+            PARTICLE_BLEND_SRC_COLOR___ONE,
+            PARTICLE_BLEND_SRC_ALPHA___ONE_MINUS_SRC_ALPHA,
+            PARTICLE_BLEND___ALPHA_TEST,
+            PARTICLE_BLEND_SRC_ALPHA___ONE,
+        } blending_type;
+        enum<ubyte>
+        {
+            PLANE = 1,
+            SPHERE,
+            SPLINE,
+            BONE,
+        } emitter_type;
+        uint16 particle_color_index;
+        ubyte _unk_0x02c; // was type?
+        ubyte _unk_0x02d; // was headortail?
+        uint16 texture_tile_rotation;
+        uint16 texture_dimensions_rows;
+        uint16 texture_dimensions_columns;
+        M2Track emission_speed; // float
+        M2Track speed_variation; // float
+        M2Track vertical_range; // float
+        M2Track horizontal_range; // float
+        M2Track gravity; // float
+        M2Track lifespan; // float
+        float lifespan_vary;
+        M2Track emission_rate; // float
+        float emission_rate_vary;
+        M2Track emission_area_length; // float
+        M2Track emission_area_width; // float
+        M2Track z_source; // float
+        M2TrackNoHeader colorTrack; // vec3
+        M2TrackNoHeader alphaTrack; // uint16
+        M2TrackNoHeader scaleTrack; // vec2
+        vec2 scale_vary;
+        M2TrackNoHeader headCellTrack; // uint16
+        M2TrackNoHeader tailCellTrack; // uint16
+        float something_particle_style;
+        float unk_spread1;
+        float unk_spread2;
+        vec2 twinkleScale;
+        float unk_;
+        float drag;
+        float base_spin;
+        float base_spin_vary;
+        float spin;
+        float spin_vary;
+        float unk2_;
+        vec3 model_1_rotation;
+        vec3 model_2_rotation;
+        vec3 model_translation;
+        float followParams[4];
+        uint32 nUnknownReference;
+        uint32 ofsUnknownReference;
+        M2Track enabled_in; // uchar
+        
+        if( xpac >= CATA )
+        {
+            uint32 multi_texture_params0[2]; // actually fixed point type
+            uint32 multi_texture_params1[2]; // actually fixed point type
+        }
+        
+    } particle_emitters[ header.nParticleEmitters ];
+} m2;
+
