@@ -143,7 +143,7 @@ struct M2
 	    uint32 lName;	
 	    uint32 ofsName;
     
-        struct M2_GLOBAL_MODEL_FLAG
+        struct
         {
             uint32 TILT_X : 1;
             uint32 TILT_Y : 1;
@@ -154,13 +154,6 @@ struct M2
             uint32 UNK_0x40 : 1;
             uint32 HAS_LOD_SKIN_FILES : 1;
             uint32 UNK_0x100_CAMERA_RELATED : 1;
-            uint32 UNK_0x200 : 1;
-            uint32 UNK_0x400 : 1;
-            uint32 UNK_0x800 : 1;
-            uint32 UNK_0x1000 : 1;
-            uint32 UNK_0x2000 : 1;
-            uint32 UNK_0x4000 : 1;
-            uint32 UNK_0x8000 : 1;
         } GlobalModelFlags;
     
 	    uint32 nGlobalSequences;
