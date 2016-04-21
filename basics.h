@@ -199,7 +199,7 @@ void C3sVectorWrite (C3sVector& rec, string s)
 
 // CAaBox --
 
-typedef struct 
+typedef struct
 {
 C3Vector lower;
 C3Vector upper;
