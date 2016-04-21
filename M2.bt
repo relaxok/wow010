@@ -9,6 +9,29 @@ struct M2Array
    uint32_t offset_elements;
  };
 
+typedef struct (int T)
+{
+  uint32_t num<hidden=true>;
+  uint32_t offs<hidden=true>;
+
+  local int _T = T;
+  local int c = FTell();
+  FSeek (offs + startPos);
+  local uint32_t i;
+  for (i = 0; i < num; ++i)
+  {
+    T_resolve (T);
+  }
+  FSeek (c);
+} M2Array_<read=readM2Array>;
+string readM2Array (M2Array_& a)
+{
+  string x;
+  SPrintf (x, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + startPos));
+  return x;
+}
+
+
 struct M2TrackHead
 {
     enum<uint16_t>
@@ -58,6 +81,15 @@ string get_m2array_filename( M2Array& arr )
   return ReadString( FTell() );
 }
 
+struct M2Vertex
+{
+  C3Vector pos;
+  unsigned char bone_weights[4];
+  unsigned char bone_indices[4];
+  C3Vector normal;
+  C2Vector tex_coords[2];  // two textures, depending on shader used
+};
+
 enum XPAC
 {
   CLASSIC,
@@ -82,6 +114,29 @@ XPAC SetXpac( uint32_t Version )
     return CLASSIC;
 }
 
+enum
+{
+  _ = T_extra_begin,
+  T_M2Vertex,
+};
+
+void T_resolve_extra (int T)
+{
+  switch (T)
+  {
+    case T_M2Vertex: M2Vertex _; break;
+    default: Assert (false);
+  }
+}
+string T_print_extra (int T)
+{
+  switch (T)
+  {
+    case T_M2Vertex: return "M2Vertex";
+    default: Assert (false);
+  }
+}
+
 struct M2
 {
     // Legion chunk?
@@ -104,8 +159,7 @@ struct M2
     {
 	    uint32_t Version;
         xpac = SetXpac( Version );
-	    uint32_t lName;
-	    uint32_t ofsName;
+	    M2Array_ name (T_char);
 
         struct
         {
@@ -127,8 +181,8 @@ struct M2
             uint32_t UNK_0x8000 : 1;
         } GlobalModelFlags;
 
-	    uint32_t nGlobalSequences;
-	    uint32_t ofsGlobalSequences;
+      M2Array_ global_sequences (T_uint32_t);
+
 	    uint32_t nAnimations;
 	    uint32_t ofsAnimations;
 	    uint32_t nAnimationLookup;
@@ -137,8 +191,7 @@ struct M2
 	    uint32_t ofsBones;
 	    uint32_t nKeyBoneLookup;
 	    uint32_t ofsKeyBoneLookup;
-	    uint32_t nVertices;
-	    uint32_t ofsVertices;
+      M2Array_ vertices (T_M2Vertex);
 	    uint32_t _nViews_deprecated;
 	    uint32_t nColors;
 	    uint32_t ofsColors;
@@ -166,12 +219,9 @@ struct M2
 	    float  VertexRadius;
 	    CAaBox  BoundingBox;
 	    float  BoundingRadius;
-	    uint32_t nBoundingTriangles;
-	    uint32_t ofsBoundingTriangles;
-	    uint32_t nBoundingVertices;
-	    uint32_t ofsBoundingVertices;
-	    uint32_t nBoundingNormals;
-	    uint32_t ofsBoundingNormals;
+      M2Array_ boundingTriangles (T_uint16_t);
+      M2Array_ boundingVertices (T_C3Vector);
+      M2Array_ boundingNormals (T_C3Vector);
 	    uint32_t nAttachments;
 	    uint32_t ofsAttachments;
 	    uint32_t nAttachLookup;
@@ -195,14 +245,6 @@ struct M2
     	    uint32_t ofsBlendModeOverrides;
         }
     } header;
-
-    // Name
-    FSeek( header.ofsName + startPos );
-    char name[ header.lName ];
-
-    // Global Sequences
-    FSeek( header.ofsGlobalSequences + startPos );
-    uint32_t global_sequences[ header.nGlobalSequences ];
 
     // Animations
     FSeek( header.ofsAnimations + startPos );
@@ -324,17 +366,6 @@ struct M2
         WHEEL8,
     } key_bone_lookups[ header.nKeyBoneLookup ];
 
-    // Vertices
-    FSeek( header.ofsVertices + startPos );
-    struct
-    {
-        C3Vector position;
-        ubyte bone_weights[4];
-        ubyte bone_indices[4];
-        C3Vector normal;
-        uv texcoords1;
-        uv texcoords2;
-    } vertices[ header.nVertices ];
 
     // Color/Alpha animations
     FSeek( header.ofsColors + startPos );
@@ -435,16 +466,6 @@ struct M2
             UNK_WOD,
         } blendMode;
     } materials[ header.nMaterials ];
-
-    // Bounding Volumes
-    FSeek( header.ofsBoundingVertices + startPos );
-    C3Vector bounding_vertices[ header.nBoundingVertices ];
-
-    FSeek( header.ofsBoundingTriangles + startPos );
-    uint16_t bounding_triangles[ header.nBoundingTriangles ];
-
-    FSeek( header.ofsBoundingNormals + startPos );
-    C3Vector bounding_normals[ header.nBoundingNormals];
 
     // Attachments
     FSeek( header.ofsAttachments + startPos );

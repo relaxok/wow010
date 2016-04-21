@@ -428,3 +428,132 @@ string show_localized_stringref(localized_stringref& rec)
   return x;
 }
 
+enum
+{
+  T_bitmask,
+  T_char,
+  T_C2IVector,
+  T_C2Vector,
+  T_C3sVector,
+  T_C3Vector,
+  T_C44Matrix,
+  T_C4Plane,
+  T_C4Quaternion,
+  T_C4Vector,
+  T_CAaBox,
+  T_CArgb,
+  T_CHUNK,
+  T_CHUNK_header,
+  T_CHUNK_MAGIC,
+  T_int16_t,
+  T_int24_t,
+  T_int32_t,
+  T_int64_t,
+  T_int8_t,
+  T_localized_stringref,
+  T_stringref,
+  T_uint16_t,
+  T_uint32_t,
+  T_uint32_t_BE,
+  T_uint40_t_BE,
+  T_uint64_t,
+  T_uint8_t,
+
+  T_extra_begin,
+};
+
+string T_print (int t)
+{
+  switch (t)
+  {
+  case T_bitmask: return "bitmask";
+  case T_char: return "char";
+  case T_C2IVector: return "C2IVector";
+  case T_C2Vector: return "C2Vector";
+  case T_C3sVector: return "C3sVector";
+  case T_C3Vector: return "C3Vector";
+  case T_C44Matrix: return "C44Matrix";
+  case T_C4Plane: return "C4Plane";
+  case T_C4Quaternion: return "C4Quaternion";
+  case T_C4Vector: return "C4Vector";
+  case T_CAaBox: return "CAaBox";
+  case T_CArgb: return "CArgb";
+  case T_CHUNK: return "CHUNK";
+  case T_CHUNK_header: return "CHUNK_header";
+  case T_CHUNK_MAGIC: return "CHUNK_MAGIC";
+  case T_int16_t: return "int16_t";
+  case T_int24_t: return "int24_t";
+  case T_int32_t: return "int32_t";
+  case T_int64_t: return "int64_t";
+  case T_int8_t: return "int8_t";
+  case T_localized_stringref: return "localized_stringref";
+  case T_stringref: return "stringref";
+  case T_uint16_t: return "uint16_t";
+  case T_uint32_t: return "uint32_t";
+  case T_uint32_t_BE: return "uint32_t_BE";
+  case T_uint40_t_BE: return "uint40_t_BE";
+  case T_uint64_t: return "uint64_t";
+  case T_uint8_t: return "uint8_t";
+  default: return T_print_extra (t);
+  }
+}
+
+void T_resolve (int t)
+{
+  switch (t)
+  {
+  case T_bitmask: bitmask _; break;
+  case T_char: char _; break;
+  case T_C2IVector: C2IVector _; break;
+  case T_C2Vector: C2Vector _; break;
+  case T_C3sVector: C3sVector _; break;
+  case T_C3Vector: C3Vector _; break;
+  case T_C44Matrix: C44Matrix _; break;
+  case T_C4Plane: C4Plane _; break;
+  case T_C4Quaternion: C4Quaternion _; break;
+  case T_C4Vector: C4Vector _; break;
+  case T_CAaBox: CAaBox _; break;
+  case T_CArgb: CArgb _; break;
+  case T_CHUNK: CHUNK _; break;
+  case T_CHUNK_header: CHUNK_header _; break;
+  case T_CHUNK_MAGIC: CHUNK_MAGIC _; break;
+  case T_int16_t: int16_t _; break;
+  case T_int24_t: int24_t _; break;
+  case T_int32_t: int32_t _; break;
+  case T_int64_t: int64_t _; break;
+  case T_int8_t: int8_t _; break;
+  case T_localized_stringref: localized_stringref _; break;
+  case T_stringref: stringref _; break;
+  case T_uint16_t: uint16_t _; break;
+  case T_uint32_t: uint32_t _; break;
+  case T_uint32_t_BE: uint32_t_BE _; break;
+  case T_uint40_t_BE: uint40_t_BE _; break;
+  case T_uint64_t: uint64_t _; break;
+  case T_uint8_t: uint8_t _; break;
+  default: T_resolve_extra (t); break;
+  }
+}
+
+string T_array_read (int t, int size, int offset)
+{
+  switch (t)
+  {
+  case T_char: return ReadString (offset, size); break;
+  case T_uint32_t:
+    {
+      int i;
+      string s;
+      if (size != 0)
+      {
+        SPrintf (s, "%s%i", s, ReadUInt (offset));
+      }
+      for (i = 1; i < size; ++i)
+      {
+        SPrintf (s, "%s, %i", s, ReadUInt (offset + i * 4));
+      }
+      return s;
+    }
+  }
+
+  return "<" + T_print (t) + ">";
+}
