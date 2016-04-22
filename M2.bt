@@ -26,30 +26,19 @@ local uint32_t xpac_ver;
 
 XPAC GetXpac( uint32_t Version )
 {
-    if( Version > 274 ) return LEGION;
+    if( Version >= 274 ) return LEGION;
     if( Version > 272 ) return WOD;
     if( Version == 272 ) return MOP;
-    if( Version > 265 ) return CATA;
+    if( Version >= 265 ) return CATA;
     if( Version == 264 ) return WOTLK;
-    if( Version > 260 ) return TBC;
+    if( Version >= 260 ) return TBC;
     return CLASSIC;
-}
-
-
-string GetXpacString( XPAC x )
-{
-    if( x == LEGION ) return "LEGION";
-    if( x == WOD ) return "WOD";
-    if( x == MOP ) return "MOP";
-    if( x == CATA ) return "CATA";
-    if( x == WOTLK ) return "WOTLK";
-    if( x == TBC ) return "TBC";
-    return "CLASSIC";
 }
 
 string setup_xpac( uint32_t Version )
 {
-    string xpacStr = GetXpacString( GetXpac( Version ) );
+    XPAC xpac = GetXpac( Version );
+    string xpacStr = EnumToString( xpac );
     string x;
     SPrintf( x, "%d (%s)", Version, xpacStr );
     return x;
@@ -75,9 +64,7 @@ typedef struct (int T)
 
 string readM2Array (M2Array& a)
 {
-  string x;
-  SPrintf (x, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + startPos));
-  return x;
+  string s; SPrintf (s, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + startPos)); return s;
 }
 
 typedef C2Vector uv;
@@ -103,16 +90,10 @@ typedef struct
  
 string readM2CompQuat (M2CompQuat& a)
 {
-  short val0 = a.val[0];
-  short val1 = a.val[1];
-  short val2 = a.val[2];
-  short val3 = a.val[3];
-  string x;
-  SPrintf (x, "( %d, %d, %d, %d )", a.val[0], val1, val2, val3 );
-  return x;
+  string s; SPrintf (s, "( %d, %d, %d, %d )", a.val[0], a.val[1], a.val[2], a.val[3] ); return s;
 }
 
-struct M2TrackHead
+typedef struct
 {
     enum<uint16_t>
     {
@@ -122,7 +103,12 @@ struct M2TrackHead
         BEZIER,
     } interpolation_type;
     int16_t global_sequence;
-};
+} M2TrackHead <read=readM2TrackHead>;
+
+string readM2TrackHead( M2TrackHead& a )
+{
+    string s; SPrintf( s, "interpolate: %s, global_seq: %d", EnumToString( a.interpolation_type ), a.global_sequence ); return s;
+}
 
 typedef struct (int T)
 {
@@ -141,16 +127,13 @@ typedef struct (int T)
 
 string readM2TrackArray (M2TrackArray& a)
 {
-  string x;
+  string s;
   if( a._T == T_uint32_t ) // this type doesn't make sense in the array read anymore
-  {
-    SPrintf (x, "%u", a.num );
-  }
+    SPrintf (s, "%u", a.num );
   else
-  {
-    SPrintf (x, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + startPos));
-  }
-  return x;
+    SPrintf (s, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + startPos));
+  
+  return s;
 }
 
 struct M2TrackBase
@@ -180,7 +163,12 @@ typedef struct
     uint32_t bone;
     C3Vector position;
     M2TrackBase anim;
-} M2Event <optimize=false>;
+} M2Event <read=readM2Event,optimize=false>;
+
+string readM2Event( M2Event& a )
+{
+    string s; SPrintf( s, "%c%c%c%c", a.identifier[0], a.identifier[1], a.identifier[2], a.identifier[3] );  return s;
+}
 
 typedef struct
 {
@@ -230,7 +218,12 @@ typedef struct
     {
         M2Track fov (T_float);
     }
-} M2Camera <optimize=false>;
+} M2Camera <read=readM2Camera,optimize=false>;
+
+string readM2Camera( M2Camera& a )
+{
+    string s; SPrintf( s, "%s", EnumToString( a.type ) ); return s;
+}
 
 typedef struct
 {
@@ -484,7 +477,12 @@ typedef struct
     uint32_t bone;
     C3Vector position;
     M2Track anim (T_uint8_t);
-} M2Attachment <optimize=false>;
+} M2Attachment <read=readM2Attachment,optimize=false>;
+
+string readM2Attachment( M2Attachment& a )
+{
+    string s; SPrintf( s, "%s", EnumToString( a.id ) ); return s;
+}
 
 typedef struct
 {
@@ -493,7 +491,7 @@ typedef struct
     M2Track scaling (T_C3Vector); 
 } M2TextureTransform <optimize=false>;
 
-struct M2Material
+typedef struct
 {
     struct 
     {
@@ -521,7 +519,21 @@ struct M2Material
         DEEPRUN_TRAM,
         UNK_WOD,
     } blend_mode;
-};
+} M2Material <read=readM2Material>;
+
+string readM2Material( M2Material& a )
+{
+    string flagsStr;
+    if( a.flags.UNLIT ) flagsStr += "UNLIT  ";
+    if( a.flags.UNFOGGED ) flagsStr += "UNFOGGED  ";
+    if( a.flags.TWOSIDED ) flagsStr += "TWOSIDED  ";
+    if( a.flags.BILLBOARD ) flagsStr += "BILLBOARD  ";
+    if( a.flags.DISABLE_ZBUFFER ) flagsStr += "DISABLE_ZBUFFER  ";
+
+    if( flagsStr == "" ) flagsStr = "NONE";
+    
+    string s; SPrintf( s, "blend: %s, flags: %s", EnumToString( a.blend_mode ), flagsStr ); return s;
+}
 
 typedef struct
 {
@@ -559,9 +571,11 @@ string readM2Texture( M2Texture& a )
 {
   local int64 pos = FTell();
   FSeek( a.filename.offs + startPos );
-  string x = ReadString( FTell() );
+  string filenameStr = ReadString( FTell() );
+  string s = EnumToString(a.type);
+  if( filenameStr != "" ) s = filenameStr;
   
-  return x;
+  return s;
 }
 
 typedef struct
@@ -689,7 +703,7 @@ struct M2
     xpac = GetXpac( version ); // template seems to fail without this
     M2Array name (T_char);
     
-    struct
+    struct M2Flags
     {
         uint32_t TILT_X : 1;
         uint32_t TILT_Y : 1;
@@ -707,7 +721,7 @@ struct M2
         uint32_t UNK_0x2000 : 1;
         uint32_t UNK_0x4000 : 1;
         uint32_t UNK_0x8000 : 1;
-    } flags;
+    } flags <read=readM2Flags>;
     
     M2Array global_sequences (T_uint32_t);
     M2Array animations (T_M2Sequence);
@@ -726,7 +740,7 @@ struct M2
     M2Array texture_lookups (T_uint16_t);
     if( xpac < CATA ) { M2Array texture_units (T_uint16_t); } else{ M2Array _texture_units_deprecated (T_uint16_t) <hidden=true>; }
     M2Array texture_weights_lookups (T_uint16_t);
-    M2Array uv_animation_lookups (T_uint16_t);
+    M2Array uv_animation_lookups (T_int16_t);
     CAaBox  vertex_box;
     float   vertex_radius;
     CAaBox  bounding_box;
@@ -745,3 +759,16 @@ struct M2
     if( flags.HAS_BLENDMODE_OVERRIDES ) M2Array blend_maps (T_uint16_t);
 } m2;
 
+
+string readM2Flags( M2Flags& flags )
+{
+    string flagsStr;   
+    if( flags.TILT_X ) flagsStr += "TILT_X  ";
+    if( flags.TILT_Y ) flagsStr += "TILT_Y  ";
+    if( flags.HAS_BLENDMODE_OVERRIDES ) flagsStr += "HAS_BLENDMODE_OVERRIDES  ";
+    if( flags.LOAD_PHYSICS_DATA ) flagsStr += "LOAD_PHYSICS_DATA  ";
+    if( flags.HAS_LOD_SKIN_FILES ) flagsStr += "HAS_LOD_SKIN_FILES  ";
+       
+    if( flagsStr == "" ) flagsStr = "NONE";
+    return flagsStr;
+}

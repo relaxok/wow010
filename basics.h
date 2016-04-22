@@ -548,11 +548,39 @@ string T_array_read (int t, int size, int offset)
       string s;
       if (size != 0)
       {
-        SPrintf (s, "%s%i", s, ReadUInt (offset));
+        SPrintf (s, "%s%u", s, ReadUInt (offset));
       }
       for (i = 1; i < size; ++i)
       {
-        SPrintf (s, "%s, %i", s, ReadUInt (offset + i * 4));
+        SPrintf (s, "%s, %u", s, ReadUInt (offset + i * 4));
+      }
+      return s;
+    }
+  case T_uint16_t:
+    {
+      int i;
+      string s;
+      if (size != 0)
+      {
+        SPrintf (s, "%s%u", s, ReadUShort (offset));
+      }
+      for (i = 1; i < size; ++i)
+      {
+        SPrintf (s, "%s, %u", s, ReadUShort (offset + i * 4));
+      }
+      return s;
+    }
+  case T_int16_t:
+    {
+      int i;
+      string s;
+      if (size != 0)
+      {
+        SPrintf (s, "%s%i", s, ReadShort (offset));
+      }
+      for (i = 1; i < size; ++i)
+      {
+        SPrintf (s, "%s, %i", s, ReadShort (offset + i * 4));
       }
       return s;
     }
