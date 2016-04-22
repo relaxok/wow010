@@ -290,33 +290,36 @@ struct M2
     FSeek( header.ofsBones + startPos );
     struct
     {
-        int32 key_bone_id;
-
         struct
         {
-	        uint32_t UNK_0x1 : 1;
-	        uint32_t UNK_0x2 : 1;
-	        uint32_t UNK_0x4 : 1;
-	        uint32_t SPHERICAL_BILLBOARD : 1;
-	        uint32_t CYLINDRICAL_BILLBOARD_LOCK_X : 1;
-	        uint32_t CYLINDRICAL_BILLBOARD_LOCK_Y : 1;
-	        uint32_t CYLINDRICAL_BILLBOARD_LOCK_Z : 1;
-	        uint32_t UNK_0x80 : 1;
-	        uint32_t UNK_0x100 : 1;
-	        uint32_t TRANSFORMED : 1;
-	        uint32_t KINEMATIC_BONE : 1;
-	        uint32_t UNK_0x800 : 1;
-	        uint32_t HELMET_ANIM_SCALED : 1;
-        } flags;
-
-        int16_t parent_bone;
-        uint16_t submesh_id;
-        uint16_t _unknown[2];
-        M2Track translation (T_C3Vector);
-        M2Track rotation (T_M2CompQuat);
-        M2Track scale (T_C3Vector);
-        C3Vector pivot;
-    } bones[ header.nBones ];// <optimize=false>;
+            int32 key_bone_id;
+    
+            struct
+            {
+	            uint32_t UNK_0x1 : 1;
+	            uint32_t UNK_0x2 : 1;
+	            uint32_t UNK_0x4 : 1;
+	            uint32_t SPHERICAL_BILLBOARD : 1;
+	            uint32_t CYLINDRICAL_BILLBOARD_LOCK_X : 1;
+	            uint32_t CYLINDRICAL_BILLBOARD_LOCK_Y : 1;
+	            uint32_t CYLINDRICAL_BILLBOARD_LOCK_Z : 1;
+	            uint32_t UNK_0x80 : 1;
+	            uint32_t UNK_0x100 : 1;
+	            uint32_t TRANSFORMED : 1;
+	            uint32_t KINEMATIC_BONE : 1;
+	            uint32_t UNK_0x800 : 1;
+	            uint32_t HELMET_ANIM_SCALED : 1;
+            } flags;
+    
+            int16_t parent_bone;
+            uint16_t submesh_id;
+            uint16_t _unknown[2];
+            M2Track translation (T_C3Vector);
+            M2Track rotation (T_M2CompQuat);
+            M2Track scale (T_C3Vector);
+            C3Vector pivot;
+        } bones[ header.nBones ] <optimize=false>;
+    } bones;
 
     FSeek( header.ofsBoneLookup + startPos );
     uint16_t bone_lookups[ header.nBoneLookup ];
