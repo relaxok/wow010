@@ -2,13 +2,6 @@
 
 typedef C2Vector uv;
 
-
-struct M2Array
-{
-   uint32_t number;
-   uint32_t offset_elements;
- };
-
 typedef struct (int T)
 {
   uint32_t num<hidden=true>;
@@ -23,63 +16,15 @@ typedef struct (int T)
     T_resolve (T);
   }
   FSeek (c);
-} M2Array_<read=readM2Array>;
-string readM2Array (M2Array_& a)
+} M2Array<read=readM2Array>;
+string readM2Array (M2Array& a)
 {
   string x;
   SPrintf (x, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + startPos));
   return x;
 }
 
-
-struct M2TrackHead
-{
-    enum<uint16_t>
-    {
-        NO_INTERPOLATION,
-        LINEAR,
-        HERMITE,
-        BEZIER,
-    } interpolation_type;
-    int16_t global_sequence;
-};
-struct M2TrackBase
-  {
-  M2TrackHead header;
-  uint32_t nTimelinesForTimestamps;
-  uint32_t ofsTimelinesForTimestamps;
-};
-
-struct M2Track
-{
-  M2TrackHead header;
-  uint32_t nTimelinesForTimestamps;
-  uint32_t ofsTimelinesForTimestamps;
-  uint32_t nTimelinesForKeys;
-  uint32_t ofsTimelinesForKeys;
-};
-
-struct M2TrackNoHeader
-{
-  uint32_t nTimelinesForTimestamps;
-  uint32_t ofsTimelinesForTimestamps;
-  uint32_t nTimelinesForKeys;
-  uint32_t ofsTimelinesForKeys;
-};
-
 local int startPos = 0;
-
-string get_tex_name( int offset )
-{
-  FSeek( offset + startPos );
-  return ReadString( FTell() );
-}
-
-string get_m2array_filename( M2Array& arr )
-{
-  FSeek( arr.offset_elements + startPos );
-  return ReadString( FTell() );
-}
 
 struct M2Vertex
 {
@@ -89,6 +34,45 @@ struct M2Vertex
   C3Vector normal;
   C2Vector tex_coords[2];  // two textures, depending on shader used
 };
+
+struct M2SplineKey
+{
+   float _[9];
+};
+
+struct M2CompQuat
+{
+   short val[4];
+};
+
+enum
+{
+  _ = T_extra_begin,
+  T_M2Vertex,
+  T_M2SplineKey,
+  T_M2CompQuat,
+};
+
+void T_resolve_extra (int T)
+{
+  switch (T)
+  {
+    case T_M2Vertex: M2Vertex _; break;
+    case T_M2SplineKey: M2SplineKey _; break;
+    case T_M2CompQuat: M2CompQuat _; break;
+    default: Assert (false);
+  }
+}
+string T_print_extra (int T)
+{
+  switch (T)
+  {
+    case T_M2Vertex: return "M2Vertex";
+    case T_M2SplineKey: return "M2SplineKey";
+    case T_M2CompQuat: return "M2CompQuat";
+    default: Assert (false);
+  }
+}
 
 enum XPAC
 {
@@ -114,28 +98,50 @@ XPAC SetXpac( uint32_t Version )
     return CLASSIC;
 }
 
-enum
+struct M2TrackHead
 {
-  _ = T_extra_begin,
-  T_M2Vertex,
+    enum<uint16_t>
+    {
+        NO_INTERPOLATION,
+        LINEAR,
+        HERMITE,
+        BEZIER,
+    } interpolation_type;
+    int16_t global_sequence;
 };
 
-void T_resolve_extra (int T)
+typedef struct (int T)
 {
-  switch (T)
-  {
-    case T_M2Vertex: M2Vertex _; break;
-    default: Assert (false);
-  }
-}
-string T_print_extra (int T)
+    uint32_t num <hidden=true>;
+    uint32_t vals <hidden=true>;
+    if( num > 0 )
+    {
+        local int64 curr_pos = FTell();
+        FSeek(startPos + vals);
+        M2Array values ( T )[ num ] <optimize=true>;
+        FSeek(curr_pos);
+    }
+} M2TrackArray <optimize=false>;
+
+struct M2TrackBase
 {
-  switch (T)
-  {
-    case T_M2Vertex: return "M2Vertex";
-    default: Assert (false);
-  }
-}
+  M2TrackHead header;
+  M2TrackArray timestamps (T_uint32_t);
+};
+
+typedef struct (int T)
+{
+  M2TrackHead header;
+  
+  M2TrackArray timestamps (T_uint32_t);
+  M2TrackArray keys (T);
+} M2Track;
+
+typedef struct (int T)
+{
+  M2TrackArray timestamps (T_uint32_t);
+  M2TrackArray keys (T);
+} M2TrackNoHeader;
 
 struct M2
 {
@@ -159,7 +165,7 @@ struct M2
     {
 	    uint32_t Version;
         xpac = SetXpac( Version );
-	    M2Array_ name (T_char);
+	    M2Array name (T_char);
 
         struct
         {
@@ -181,17 +187,16 @@ struct M2
             uint32_t UNK_0x8000 : 1;
         } GlobalModelFlags;
 
-      M2Array_ global_sequences (T_uint32_t);
+        M2Array global_sequences (T_uint32_t);
 
 	    uint32_t nAnimations;
 	    uint32_t ofsAnimations;
-	    uint32_t nAnimationLookup;
-	    uint32_t ofsAnimationLookup;
+        M2Array animation_lookups (T_int16_t);
 	    uint32_t nBones;
 	    uint32_t ofsBones;
 	    uint32_t nKeyBoneLookup;
 	    uint32_t ofsKeyBoneLookup;
-      M2Array_ vertices (T_M2Vertex);
+        M2Array vertices (T_M2Vertex);
 	    uint32_t _nViews_deprecated;
 	    uint32_t nColors;
 	    uint32_t ofsColors;
@@ -201,39 +206,33 @@ struct M2
 	    uint32_t ofsTextureWeights;
 	    uint32_t nUVAnimations;
 	    uint32_t ofsUVAnimations;
-	    uint32_t nTexReplace;
-	    uint32_t ofsTexReplace;
+	    M2Array texture_replacements (T_int16_t);
 	    uint32_t nMaterials;
 	    uint32_t ofsMaterials;
 	    uint32_t nBoneLookup;
 	    uint32_t ofsBoneLookup;
-	    uint32_t nTexLookup;
-	    uint32_t ofsTexLookup;
+        M2Array texture_lookups (T_uint16_t);
 	    uint32_t _nTexUnits_deprecated;
 	    uint32_t _ofsTexUnits_deprecated;
-	    uint32_t nTextureWeightsLookup;
-	    uint32_t ofsTextureWeightsLookup;
-	    uint32_t nUVAnimLookup;
-	    uint32_t ofsUVAnimLookup;
+	    M2Array texture_weights_lookups (T_uint16_t);
+	    M2Array uv_animation_lookups (T_uint16_t);
 	    CAaBox  VertexBox;
-	    float  VertexRadius;
+	    float   VertexRadius;
 	    CAaBox  BoundingBox;
 	    float  BoundingRadius;
-      M2Array_ boundingTriangles (T_uint16_t);
-      M2Array_ boundingVertices (T_C3Vector);
-      M2Array_ boundingNormals (T_C3Vector);
+        M2Array boundingTriangles (T_uint16_t);
+        M2Array boundingVertices (T_C3Vector);
+        M2Array boundingNormals (T_C3Vector);
 	    uint32_t nAttachments;
 	    uint32_t ofsAttachments;
-	    uint32_t nAttachLookup;
-	    uint32_t ofsAttachLookup;
+	    M2Array attachment_lookups (T_uint16_t);
 	    uint32_t nEvents;
 	    uint32_t ofsEvents;
 	    uint32_t nLights;
 	    uint32_t ofsLights;
 	    uint32_t nCameras;
 	    uint32_t ofsCameras;
-	    uint32_t nCameraLookup;
-	    uint32_t ofsCameraLookup;
+	    M2Array camera_lookups (T_uint16_t);
 	    uint32_t nRibbonEmitters;
 	    uint32_t ofsRibbonEmitters;
 	    uint32_t nParticleEmitters;
@@ -287,9 +286,6 @@ struct M2
 	    uint16_t aliasNext;
     } animations[ header.nAnimations ];
 
-    FSeek( header.ofsAnimationLookup + startPos );
-    uint16_t animation_lookups[ header.nAnimationLookup ];
-
     // Bones
     FSeek( header.ofsBones + startPos );
     struct
@@ -316,11 +312,11 @@ struct M2
         int16_t parent_bone;
         uint16_t submesh_id;
         uint16_t _unknown[2];
-        M2Track translation; // C3Vector
-        M2Track rotation; // struct M2CompQuat { int16_t val[4]; };
-        M2Track scale; // C3Vector
+        M2Track translation (T_C3Vector);
+        M2Track rotation (T_M2CompQuat);
+        M2Track scale (T_C3Vector);
         C3Vector pivot;
-    } bones[ header.nBones ];
+    } bones[ header.nBones ];// <optimize=false>;
 
     FSeek( header.ofsBoneLookup + startPos );
     uint16_t bone_lookups[ header.nBoneLookup ];
@@ -371,9 +367,9 @@ struct M2
     FSeek( header.ofsColors + startPos );
     struct
     {
-        M2Track color; // C3Vector
-        M2Track alpha; // uint16_t
-    } colors[ header.nColors ];
+        M2Track color (T_C3Vector);
+        M2Track alpha (T_uint16_t);
+    } colors[ header.nColors ] <optimize=true>;
 
     // Textures
     FSeek( header.ofsTextures + startPos );
@@ -406,34 +402,21 @@ struct M2
             uint32_t TEXTURE_WRAP_X : 1;
             uint32_t TEXTURE_WRAP_Y : 1;
         } flags;
-        uint32_t lenFilename;
-        uint32_t ofsFilename <comment=get_tex_name>;
-    } textures[ header.nTextures ];
-
-    FSeek( header.ofsTexLookup + startPos );
-    uint16_t texture_lookups[ header.nTexLookup ];
-
-    FSeek( header.ofsTexReplace + startPos );
-    int16_t texture_replacements[ header.nTexReplace ];
+        M2Array filename (T_char);
+    } textures[ header.nTextures ] <optimize=true>;
 
     // Texture Weights (was Transparency)
     FSeek( header.ofsTextureWeights + startPos );
-    M2Track texture_weights[ header.nTextureWeights ]; // uint16_t
-
-    FSeek( header.ofsTextureWeightsLookup + startPos );
-    uint16_t texture_weights_lookup[ header.nTextureWeightsLookup ];
+    M2Track texture_weights (T_uint16_t)[ header.nTextureWeights ];
 
     // UV Animations
     FSeek( header.ofsUVAnimations + startPos );
     struct
     {
-        M2Track translation; // C3Vector
-        M2Track rotation; // C4Vector
-        M2Track scaling; // C3Vector
+        M2Track translation (T_C3Vector); 
+        M2Track rotation (T_C4Vector); 
+        M2Track scaling (T_C3Vector); 
     } uv_animations[ header.nUVAnimations ];
-
-    FSeek( header.ofsUVAnimLookup + startPos );
-    uint16_t uv_animation_lookups[ header.nUVAnimLookup ];
 
     // Materials (was Render Flags)
     FSeek( header.ofsMaterials + startPos );
@@ -464,7 +447,7 @@ struct M2
             FADE,
             DEEPRUN_TRAM,
             UNK_WOD,
-        } blendMode;
+        } blend_mode;
     } materials[ header.nMaterials ];
 
     // Attachments
@@ -538,11 +521,8 @@ struct M2
 
         uint32_t bone;
         C3Vector position;
-        M2Track anim; // uchar
+        M2Track anim (T_uint8_t);
     } attachments[ header.nAttachments ];
-
-    FSeek( header.ofsAttachLookup + startPos );
-    int16_t attachment_lookups[ header.nAttachLookup ];
 
     // Events
     FSeek( header.ofsEvents + startPos );
@@ -567,13 +547,13 @@ struct M2
 
         int16_t bone;
         C3Vector position;
-        M2Track ambient_color; // C3Vector
-        M2Track ambient_intensity; // float
-        M2Track diffuse_color; // C3Vector
-        M2Track diffuse_intensity; // float
-        M2Track attenuation_start; // float
-        M2Track attenuation_end; // float
-        M2Track attenuation_unknown; // uchar
+        M2Track ambient_color (T_C3Vector);
+        M2Track ambient_intensity (T_float);
+        M2Track diffuse_color (T_C3Vector);
+        M2Track diffuse_intensity (T_float);
+        M2Track attenuation_start (T_float);
+        M2Track attenuation_end (T_float);
+        M2Track attenuation_unknown (T_uint8_t);
     } lights[ header.nLights ];
 
     // Cameras
@@ -592,19 +572,16 @@ struct M2
         }
         float far_clip;
         float near_clip;
-        M2Track translation_position; // 3 * 3 floats (spline key)
+        M2Track translation_position (T_M2SplineKey); 
         C3Vector position;
-        M2Track translation_target; // 3 * 3 floats (spline key)
+        M2Track translation_target (T_M2SplineKey);
         C3Vector target;
-        M2Track roll; // float
+        M2Track roll (T_float); 
         if( xpac >= CATA )
         {
-            M2Track fov;  // float
+            M2Track fov (T_float);
         }
     } cameras[ header.nCameras ];
-
-    FSeek( header.ofsCameraLookup + startPos );
-    uint16_t camera_lookups[ header.nCameraLookup ];
 
     // Ribbon Emitters
     FSeek( header.ofsRibbonEmitters + startPos );
@@ -613,19 +590,19 @@ struct M2
         int32 _unknown0;
         uint32_t bone;
         C3Vector position;
-        M2Array texture_refs; // uint16_t
-        M2Array blend_refs; // uint16_t
-        M2Track color; // C3Vector
-        M2Track opacity; // uint16_t;
-        M2Track height_above; // float
-        M2Track height_below; // float
+        M2Array texture_refs (T_uint16_t);
+        M2Array blend_refs (T_uint16_t);
+        M2Track color (T_C3Vector);
+        M2Track opacity (T_uint16_t);
+        M2Track height_above (T_float);
+        M2Track height_below (T_float);
         float edgesPerSec;
         float edgeLifeSpanInSec;
         float gravity;
         uint16_t m_rows;
         uint16_t m_cols;
-        M2Track texSlot; // uint16_t
-        M2Track dataEnabled; // uchar
+        M2Track texSlot (T_uint16_t);
+        M2Track dataEnabled (T_uint8_t);
         uint32_t _unknown1;
     } ribbon_emitters[ header.nRibbonEmitters ];
 
@@ -681,8 +658,8 @@ struct M2
            uint16_t texture;
         }
 
-        M2Array model_filename <comment=get_m2array_filename>; // uchar
-        M2Array child_emitter_filename <comment=get_m2array_filename>; // uchar
+        M2Array model_filename (T_char);
+        M2Array child_emitter_filename (T_char);
         enum<ubyte>
         {
             PARTICLE_BLEND_NONE,
@@ -704,24 +681,24 @@ struct M2
         uint16_t texture_tile_rotation;
         uint16_t texture_dimensions_rows;
         uint16_t texture_dimensions_columns;
-        M2Track emission_speed; // float
-        M2Track speed_variation; // float
-        M2Track vertical_range; // float
-        M2Track horizontal_range; // float
-        M2Track gravity; // float
-        M2Track lifespan; // float
+        M2Track emission_speed (T_float);
+        M2Track speed_variation (T_float);
+        M2Track vertical_range (T_float);
+        M2Track horizontal_range (T_float);
+        M2Track gravity (T_float);
+        M2Track lifespan (T_float);
         float lifespan_vary;
-        M2Track emission_rate; // float
+        M2Track emission_rate (T_float);
         float emission_rate_vary;
-        M2Track emission_area_length; // float
-        M2Track emission_area_width; // float
-        M2Track z_source; // float
-        M2TrackNoHeader colorTrack; // C3Vector
-        M2TrackNoHeader alphaTrack; // uint16_t
-        M2TrackNoHeader scaleTrack; // C2Vector
+        M2Track emission_area_length (T_float);
+        M2Track emission_area_width (T_float);
+        M2Track z_source (T_float);
+        M2TrackNoHeader colorTrack (T_C3Vector);
+        M2TrackNoHeader alphaTrack (T_uint16_t);
+        M2TrackNoHeader scaleTrack (T_C2Vector);
         C2Vector scale_vary;
-        M2TrackNoHeader headCellTrack; // uint16_t
-        M2TrackNoHeader tailCellTrack; // uint16_t
+        M2TrackNoHeader headCellTrack (T_uint16_t);
+        M2TrackNoHeader tailCellTrack (T_uint16_t);
         float something_particle_style;
         float unk_spread1;
         float unk_spread2;
@@ -739,7 +716,7 @@ struct M2
         float followParams[4];
         uint32_t nUnknownReference;
         uint32_t ofsUnknownReference;
-        M2Track enabled_in; // uchar
+        M2Track enabled_in (T_uint8_t);
 
         if( xpac >= CATA )
         {

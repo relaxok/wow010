@@ -458,6 +458,7 @@ enum
   T_uint40_t_BE,
   T_uint64_t,
   T_uint8_t,
+  T_float,
 
   T_extra_begin,
 };
@@ -494,6 +495,7 @@ string T_print (int t)
   case T_uint40_t_BE: return "uint40_t_BE";
   case T_uint64_t: return "uint64_t";
   case T_uint8_t: return "uint8_t";
+  case T_float: return "float";
   default: return T_print_extra (t);
   }
 }
@@ -530,6 +532,7 @@ void T_resolve (int t)
   case T_uint40_t_BE: uint40_t_BE _; break;
   case T_uint64_t: uint64_t _; break;
   case T_uint8_t: uint8_t _; break;
+  case T_float: float _; break;
   default: T_resolve_extra (t); break;
   }
 }
