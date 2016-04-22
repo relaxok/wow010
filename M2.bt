@@ -1,50 +1,15 @@
 #include "basics.h"
 
-typedef C2Vector uv;
+// Set this to 1 for faster loads !! /////////////////////////////////////////////////////////////////////////////////////
 
-typedef struct (int T)
-{
-  uint32_t num<hidden=true>;
-  uint32_t offs<hidden=true>;
+local int optimize_track_values = 1;
 
-  local int _T = T;
-  local int c = FTell();
-  FSeek (offs + startPos);
-  local uint32_t i;
-  for (i = 0; i < num; ++i)
-  {
-    T_resolve (T);
-  }
-  FSeek (c);
-} M2Array<read=readM2Array>;
-string readM2Array (M2Array& a)
-{
-  string x;
-  SPrintf (x, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + startPos));
-  return x;
-}
+// Base //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 local int startPos = 0;
 
-struct M2Vertex
-{
-  C3Vector pos;
-  unsigned char bone_weights[4];
-  unsigned char bone_indices[4];
-  C3Vector normal;
-  C2Vector tex_coords[2];  // two textures, depending on shader used
-};
+// Expansion stuff ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct M2SplineKey
-{
-   float _[9];
-};
-
-struct M2CompQuat
-{
-   short val[4];
-};
-    
 enum XPAC
 {
   CLASSIC,
@@ -69,6 +34,63 @@ XPAC SetXpac( uint32_t Version )
     return CLASSIC;
 }
 
+// Additional Types & Readers /////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef struct (int T)
+{
+  uint32_t num<hidden=true>;
+  uint32_t offs<hidden=true>;
+
+  local int _T = T;
+  local int c = FTell();
+  FSeek (offs + startPos);
+  local uint32_t i;
+  for (i = 0; i < num; ++i)
+  {
+    T_resolve (T);
+  }
+  FSeek (c);
+} M2Array<read=readM2Array>;
+
+string readM2Array (M2Array& a)
+{
+  string x;
+  SPrintf (x, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + startPos));
+  return x;
+}
+
+typedef C2Vector uv;
+
+struct M2Vertex
+{
+  C3Vector pos;
+  unsigned char bone_weights[4];
+  unsigned char bone_indices[4];
+  C3Vector normal;
+  C2Vector tex_coords[2];  // two textures, depending on shader used
+};
+
+typedef struct
+{
+   float _[9];
+} M2SplineKey;
+
+typedef struct
+{
+   short val[4];
+} M2CompQuat <read=readM2CompQuat>;
+ 
+string readM2CompQuat (M2CompQuat& a)
+{
+  short val0 = a.val[0];
+  short val1 = a.val[1];
+  short val2 = a.val[2];
+  short val3 = a.val[3];
+  string x;
+  SPrintf (x, "( %d, %d, %d, %d )", a.val[0], val1, val2, val3 );
+  return x;
+}
+
 struct M2TrackHead
 {
     enum<uint16_t>
@@ -90,7 +112,8 @@ typedef struct (int T)
     {
         local int64 c = FTell();
         FSeek(startPos + offs);
-        M2Array values ( T )[ num ] <optimize=true>;
+        if( optimize_track_values ) M2Array values ( T )[ num ] <optimize=true>;
+        else                        M2Array values ( T )[ num ] <optimize=false>;
         FSeek(c);
     }
 } M2TrackArray <read=readM2TrackArray,optimize=false>;
@@ -98,7 +121,14 @@ typedef struct (int T)
 string readM2TrackArray (M2TrackArray& a)
 {
   string x;
-  SPrintf (x, "%u", a.num );
+  if( a._T == T_uint32_t ) // this type doesn't make sense in the array read anymore
+  {
+    SPrintf (x, "%u", a.num );
+  }
+  else
+  {
+    SPrintf (x, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + startPos));
+  }
   return x;
 }
 
@@ -472,7 +502,7 @@ struct M2Material
     } blend_mode;
 };
 
-struct M2Texture
+typedef struct
 {
     enum<uint32_t>
     {
@@ -502,7 +532,16 @@ struct M2Texture
         uint32_t TEXTURE_WRAP_Y : 1;
     } flags;
     M2Array filename (T_char);
-};
+} M2Texture <read=readM2Texture>;
+
+string readM2Texture( M2Texture& a )
+{
+  local int64 pos = FTell();
+  FSeek( a.filename.offs + startPos );
+  string x = ReadString( FTell() );
+  
+  return x;
+}
 
 typedef struct
 {
@@ -534,50 +573,7 @@ typedef struct
     C3Vector pivot;
 } M2Bone <optimize=false>;
 
-enum<int16> KEY_BONE
-{
-    NO_KEY_BONE = -1,
-    ARM_L,
-    ARM_R,
-    SHOULDER_L,
-    SHOULDER_R,
-    SPINE_LOW,
-    WAIST,
-    HEAD,
-    JAW,
-    INDEX_FINGER_R,
-    MIDDLE_FINGER_R,
-    PINKY_FINGER_R,
-    RING_FINGER_R,
-    THUMB_R,
-    INDEX_FINGER_L,
-    MIDDLE_FINGER_L,
-    PINKY_FINGER_L,
-    RING_FINGER_L,
-    THUMB_L,
-    $BTH,
-    $CSR,
-    $CSL,
-    _BREATH,
-    _NAME,
-    _NAMEMOUNT,
-    $CHD,
-    $CCH,
-    ROOT,
-    WHEEL1,
-    WHEEL2,
-    WHEEL3,
-    WHEEL4,
-    WHEEL5,
-    WHEEL6,
-    WHEEL7,
-    WHEEL8,
-};
-
-struct M2KeyBones
-{
-    int16_t bone;
-};// key_bones[ WHEEL8+1 ];
+// M2Array related ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 enum
 {
@@ -646,16 +642,19 @@ string T_print_extra (int T)
     default: Assert (false);
   }
 }
-    
+
+// M2 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 struct M2
 {
-    // Legion chunk?
     startPos = FTell();
+
+    // Legion or Pre-Legion?
     uint32_t magic <hidden=true>;
     if( magic == 0x3132444D ) // MD21
     {
         uint32_t size <hidden=true>;
-        startPos = FTell();
+        startPos = FTell(); // re-base
         uint32_t magic2 <hidden=true>;
         Assert( magic2 == 0x3032444D, "only MD20 here!");
     }
