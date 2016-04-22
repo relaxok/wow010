@@ -22,8 +22,9 @@ enum XPAC
 };
 
 local XPAC xpac;
+local uint32_t xpac_ver;
 
-XPAC SetXpac( uint32_t Version )
+XPAC GetXpac( uint32_t Version )
 {
     if( Version > 274 ) return LEGION;
     if( Version > 272 ) return WOD;
@@ -32,6 +33,26 @@ XPAC SetXpac( uint32_t Version )
     if( Version == 264 ) return WOTLK;
     if( Version > 260 ) return TBC;
     return CLASSIC;
+}
+
+
+string GetXpacString( XPAC x )
+{
+    if( x == LEGION ) return "LEGION";
+    if( x == WOD ) return "WOD";
+    if( x == MOP ) return "MOP";
+    if( x == CATA ) return "CATA";
+    if( x == WOTLK ) return "WOTLK";
+    if( x == TBC ) return "TBC";
+    return "CLASSIC";
+}
+
+string setup_xpac( uint32_t Version )
+{
+    string xpacStr = GetXpacString( GetXpac( Version ) );
+    string x;
+    SPrintf( x, "%d (%s)", Version, xpacStr );
+    return x;
 }
 
 // Additional Types & Readers /////////////////////////////////////////////////////////////////////////////////////////////
@@ -663,8 +684,9 @@ struct M2
         Assert( magic == 0x3032444D, "only MD20 here!");
     }
 
-	uint32_t Version;
-    xpac = SetXpac( Version );
+	uint32_t version <read=setup_xpac>;
+    xpac_ver = version; // might need to do stuff based on this rather than an xpac value
+    xpac = GetXpac( version ); // template seems to fail without this
 	M2Array name (T_char);
 
     struct
@@ -685,7 +707,7 @@ struct M2
         uint32_t UNK_0x2000 : 1;
         uint32_t UNK_0x4000 : 1;
         uint32_t UNK_0x8000 : 1;
-    } GlobalModelFlags;
+    } flags;
 
     M2Array global_sequences (T_uint32_t);
     M2Array animations (T_M2Sequence);
@@ -705,13 +727,13 @@ struct M2
     if( xpac < CATA ) { M2Array texture_units (T_uint16_t); } else{ M2Array _texture_units_deprecated (T_uint16_t) <hidden=true>; }
 	M2Array texture_weights_lookups (T_uint16_t);
 	M2Array uv_animation_lookups (T_uint16_t);
-	CAaBox  VertexBox;
-	float   VertexRadius;
-	CAaBox  BoundingBox;
-	float  BoundingRadius;
-    M2Array boundingTriangles (T_uint16_t);
-    M2Array boundingVertices (T_C3Vector);
-    M2Array boundingNormals (T_C3Vector);
+	CAaBox  vertex_box;
+	float   vertex_radius;
+	CAaBox  bounding_box;
+	float  bounding_radius;
+    M2Array bounding_triangles (T_uint16_t);
+    M2Array bounding_vertices (T_C3Vector);
+    M2Array bounding_normals (T_C3Vector);
     M2Array attachments (T_M2Attachment);
 	M2Array attachment_lookups (T_uint16_t);
     M2Array events (T_M2Event);
@@ -720,6 +742,6 @@ struct M2
 	M2Array camera_lookups (T_uint16_t);
     M2Array ribbons (T_M2Ribbon);
     M2Array particles (T_M2Particle);
-    if( GlobalModelFlags.HAS_BLENDMODE_OVERRIDES ) M2Array blend_maps (T_uint16_t);
+    if( flags.HAS_BLENDMODE_OVERRIDES ) M2Array blend_maps (T_uint16_t);
 } m2;
 
