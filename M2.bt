@@ -669,7 +669,7 @@ string T_print_extra (int T)
 struct M2
 {
     startPos = FTell();
-
+    
     // Legion or Pre-Legion?
     uint32_t magic <hidden=true>;
     if( magic == 0x3132444D ) // MD21
@@ -683,12 +683,12 @@ struct M2
     {
         Assert( magic == 0x3032444D, "only MD20 here!");
     }
-
-	uint32_t version <read=setup_xpac>;
+    
+    uint32_t version <read=setup_xpac>;
     xpac_ver = version; // might need to do stuff based on this rather than an xpac value
     xpac = GetXpac( version ); // template seems to fail without this
-	M2Array name (T_char);
-
+    M2Array name (T_char);
+    
     struct
     {
         uint32_t TILT_X : 1;
@@ -708,38 +708,38 @@ struct M2
         uint32_t UNK_0x4000 : 1;
         uint32_t UNK_0x8000 : 1;
     } flags;
-
+    
     M2Array global_sequences (T_uint32_t);
     M2Array animations (T_M2Sequence);
     M2Array animation_lookups (T_int16_t);
     M2Array bones (T_M2Bone);
     M2Array key_bone_lookup (T_int16_t);
     M2Array vertices (T_M2Vertex);
-	if( xpac < WOTLK ) { uint32_t nViews; } else { uint32_t _nViews_deprecated <hidden=true>; }
+    if( xpac < WOTLK ) { uint32_t nViews; } else { uint32_t _nViews_deprecated <hidden=true>; }
     M2Array colors (T_M2Color);
     M2Array textures (T_M2Texture);
     M2Array texture_weights (T_M2TextureWeight);
     M2Array uv_animations (T_M2TextureTransform);
-	M2Array texture_replacements (T_int16_t);
+    M2Array texture_replacements (T_int16_t);
     M2Array materials (T_M2Material);
-	M2Array bone_lookups (T_uint16_t);
+    M2Array bone_lookups (T_uint16_t);
     M2Array texture_lookups (T_uint16_t);
     if( xpac < CATA ) { M2Array texture_units (T_uint16_t); } else{ M2Array _texture_units_deprecated (T_uint16_t) <hidden=true>; }
-	M2Array texture_weights_lookups (T_uint16_t);
-	M2Array uv_animation_lookups (T_uint16_t);
-	CAaBox  vertex_box;
-	float   vertex_radius;
-	CAaBox  bounding_box;
-	float  bounding_radius;
+    M2Array texture_weights_lookups (T_uint16_t);
+    M2Array uv_animation_lookups (T_uint16_t);
+    CAaBox  vertex_box;
+    float   vertex_radius;
+    CAaBox  bounding_box;
+    float  bounding_radius;
     M2Array bounding_triangles (T_uint16_t);
     M2Array bounding_vertices (T_C3Vector);
     M2Array bounding_normals (T_C3Vector);
     M2Array attachments (T_M2Attachment);
-	M2Array attachment_lookups (T_uint16_t);
+    M2Array attachment_lookups (T_uint16_t);
     M2Array events (T_M2Event);
     M2Array lights (T_M2Light);
     M2Array cameras (T_M2Camera);
-	M2Array camera_lookups (T_uint16_t);
+    M2Array camera_lookups (T_uint16_t);
     M2Array ribbons (T_M2Ribbon);
     M2Array particles (T_M2Particle);
     if( flags.HAS_BLENDMODE_OVERRIDES ) M2Array blend_maps (T_uint16_t);
