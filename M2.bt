@@ -12,13 +12,13 @@ local int startPos = 0;
 
 enum XPAC
 {
-  VANILLA,
-  TBC,
-  WOTLK,
-  CATA,
-  MOP,
-  WOD,
-  LEGION,
+    VANILLA,
+    TBC,
+    WOTLK,
+    CATA,
+    MOP,
+    WOD,
+    LEGION,
 };
 
 local XPAC xpac;
@@ -176,14 +176,14 @@ else
 
 typedef struct (int T)
 {
-  if( xpac <= TBC )
+if( xpac <= TBC )
 {
-    M2TrackArray interpolation_ranges (T_uint64_T );
-    M2Array timestamps (T_uint32_t);
+    M2TrackArray interpolation_ranges (T_uint64_T);
+    M2Array timestamps (T_uint16_t);
 }
 else
 {
-    M2TrackArray timestamps (T_uint32_t);
+    M2TrackArray timestamps (T_uint16_t);
 }
 
 if( xpac <= TBC )
@@ -283,7 +283,10 @@ typedef struct
     uint16_t m_cols;
     M2Track texSlot (T_uint16_t);
     M2Track dataEnabled (T_uint8_t);
+if( xpac >= WOTLK )
+{
     uint32_t _unknown1;
+}
 } M2Ribbon <optimize=false>;
 
 typedef struct
@@ -682,7 +685,8 @@ if( xpac >= CATA )
 {
     M2Array shadow_batches (T_uint32_t);
 }
-} M2SkinProfile <optimize=false>;
+} M2SkinProfile <optimize=true>;
+
 
 // M2Array related ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -802,7 +806,7 @@ if( xpac >= WOD )
         uint32_t HAS_LOD_SKIN_FILES : 1;
         uint32_t UNK_0x100_CAMERA_RELATED : 1;
 }
-    } flags <read=readM2Flags>;
+} flags <read=readM2Flags>;
     
     M2Array global_sequences (T_uint32_t);
     M2Array sequences (T_M2Sequence);
@@ -834,7 +838,14 @@ if( xpac <= TBC )
     M2Array materials (T_M2Material);
     M2Array bone_lookups (T_uint16_t);
     M2Array texture_lookups (T_uint16_t);
-    if( xpac < CATA ) { M2Array texture_units (T_uint16_t); } else{ M2Array _texture_units_deprecated (T_uint16_t) <hidden=true>; }
+if( xpac < CATA )
+{ 
+    M2Array texture_units (T_uint16_t); 
+} 
+else
+{ 
+    M2Array _texture_units_deprecated (T_uint16_t) <hidden=true>; 
+}
     M2Array texture_weights_lookups (T_uint16_t);
     M2Array uv_animation_lookups (T_int16_t);
     CAaBox  vertex_box;
