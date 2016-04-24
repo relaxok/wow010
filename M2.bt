@@ -12,7 +12,7 @@ local int startPos = 0;
 
 enum XPAC
 {
-  CLASSIC,
+  VANILLA,
   TBC,
   WOTLK,
   CATA,
@@ -32,7 +32,7 @@ XPAC GetXpac( uint32_t Version )
     if( Version >= 265 ) return CATA;
     if( Version == 264 ) return WOTLK;
     if( Version >= 260 ) return TBC;
-    return CLASSIC;
+    return VANILLA;
 }
 
 string setup_xpac( uint32_t Version )
@@ -139,21 +139,61 @@ string readM2TrackArray (M2TrackArray& a)
 struct M2TrackBase
 {
   M2TrackHead header;
-  M2TrackArray timestamps (T_uint32_t);
+if( xpac <= TBC )
+{
+    M2TrackArray interpolation_ranges (T_uint64_t);
+    M2Array timestamps (T_uint32_t);
+}
+else
+{
+    M2TrackArray timestamps (T_uint32_t);
+}
 };
 
 typedef struct (int T)
 {
-  M2TrackHead header;
+    M2TrackHead header;
   
-  M2TrackArray timestamps (T_uint32_t);
-  M2TrackArray keys (T);
+if( xpac <= TBC )
+{
+    M2TrackArray interpolation_ranges (T_uint64_t);
+    M2Array timestamps (T_uint32_t);
+}
+else
+{
+    M2TrackArray timestamps (T_uint32_t);
+}
+
+if( xpac <= TBC )
+{
+    M2Array values (T);
+}
+else
+{
+    M2TrackArray keys (T);
+}
 } M2Track;
 
 typedef struct (int T)
 {
-  M2TrackArray timestamps (T_uint32_t);
-  M2TrackArray keys (T);
+  if( xpac <= TBC )
+{
+    M2TrackArray interpolation_ranges (T_uint64_T );
+    M2Array timestamps (T_uint32_t);
+}
+else
+{
+    M2TrackArray timestamps (T_uint32_t);
+}
+
+if( xpac <= TBC )
+{
+    M2Array values (T);
+}
+else
+{
+    M2TrackArray keys (T);
+}
 } M2TrackNoHeader;
 
 typedef struct
@@ -372,7 +412,15 @@ struct M2Sequence
 {
 	uint16_t animation_id;
 	uint16_t sub_animation_id;
+if( xpac <= TBC )
+{
+    uint32_t start_timestamp;
+    uint32_t end_timestamp;
+}
+else
+{
 	uint32_t length;
+}
 	float moving_speed;
 
     struct
@@ -601,12 +649,40 @@ typedef struct
 
     int16_t parent_bone;
     uint16_t submesh_id;
+if( xpac >= TBC )
+{
     uint16_t _unknown[2];
+}
     M2Track translation (T_C3Vector);
+if( xpac == VANILLA )
+{
+    M2Track rotation (T_C4Quaternion);
+}
+else
+{
     M2Track rotation (T_M2CompQuat);
+}
     M2Track scale (T_C3Vector);
     C3Vector pivot;
 } M2Bone <optimize=false>;
+
+typedef struct
+{
+if( xpac >= WOTLK )
+{
+    uint32_t magic;                         // 'SKIN'
+}
+    M2Array indices (T_uint16_t);
+    M2Array triangles (T_uint16_t);
+    M2Array properties (T_uint32_t);
+    M2Array submeshes (T_uint32_t);
+    M2Array batches (T_uint32_t);
+    uint32_t bones;
+if( xpac >= CATA )
+{
+    M2Array shadow_batches (T_uint32_t);
+}
+} M2SkinProfile <optimize=false>;
 
 // M2Array related ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -624,6 +700,7 @@ enum
   T_M2Particle,
   T_M2Ribbon,
   T_M2Sequence,
+  T_M2SkinProfile,
   T_M2SplineKey,
   T_M2Texture,
   T_M2TextureTransform,
@@ -646,6 +723,7 @@ void T_resolve_extra (int T)
     case T_M2Particle: M2Particle _; break;
     case T_M2Ribbon: M2Ribbon _; break;
     case T_M2Sequence: M2Sequence _; break;
+    case T_M2SkinProfile : M2SkinProfile _; break;
     case T_M2SplineKey: M2SplineKey _; break;
     case T_M2Texture: M2Texture _; break;
     case T_M2TextureTransform: M2TextureTransform _; break;
@@ -669,6 +747,7 @@ string T_print_extra (int T)
     case T_M2Particle: return "M2Particle";
     case T_M2Ribbon: return "M2Ribbon";
     case T_M2Sequence: return "M2Sequence";
+    case T_M2SkinProfile: return "M2SkinProfile";
     case T_M2SplineKey: return "M2SplineKey";
     case T_M2Texture: return "M2Texture";
     case T_M2TextureTransform: return "M2TextureTransform";
@@ -708,31 +787,48 @@ struct M2
         uint32_t TILT_X : 1;
         uint32_t TILT_Y : 1;
         uint32_t UNK_0x4 : 1;
+if( xpac >= WOTLK )
+{
         uint32_t HAS_BLENDMODE_OVERRIDES : 1;
         uint32_t UNK_0x10 : 1;
+}
+if( xpac >= MOP )
+{
         uint32_t LOAD_PHYSICS_DATA : 1;
         uint32_t UNK_0x40 : 1;
+}
+if( xpac >= WOD )
+{
         uint32_t HAS_LOD_SKIN_FILES : 1;
         uint32_t UNK_0x100_CAMERA_RELATED : 1;
-        uint32_t UNK_0x200 : 1;
-        uint32_t UNK_0x400 : 1;
-        uint32_t UNK_0x800 : 1;
-        uint32_t UNK_0x1000 : 1;
-        uint32_t UNK_0x2000 : 1;
-        uint32_t UNK_0x4000 : 1;
-        uint32_t UNK_0x8000 : 1;
+}
     } flags <read=readM2Flags>;
     
     M2Array global_sequences (T_uint32_t);
-    M2Array animations (T_M2Sequence);
-    M2Array animation_lookups (T_int16_t);
+    M2Array sequences (T_M2Sequence);
+    M2Array sequence_lookups (T_int16_t);
+if( xpac <= TBC )
+{
+    M2Array playable_animation_lookups( T_int16_t );
+}
     M2Array bones (T_M2Bone);
     M2Array key_bone_lookup (T_int16_t);
     M2Array vertices (T_M2Vertex);
-    if( xpac < WOTLK ) { uint32_t nViews; } else { uint32_t _nViews_deprecated <hidden=true>; }
+if( xpac <= TBC )
+{
+    M2Array skin_profiles (T_M2SkinProfile);
+}
+else
+{
+    uint32_t num_skin_profiles;
+}
     M2Array colors (T_M2Color);
     M2Array textures (T_M2Texture);
     M2Array texture_weights (T_M2TextureWeight);
+if( xpac <= TBC )
+{
+    M2Array unk (T_uint32_t);
+}
     M2Array uv_animations (T_M2TextureTransform);
     M2Array texture_replacements (T_int16_t);
     M2Array materials (T_M2Material);
@@ -756,7 +852,10 @@ struct M2
     M2Array camera_lookups (T_uint16_t);
     M2Array ribbons (T_M2Ribbon);
     M2Array particles (T_M2Particle);
+if( xpac >= WOTLK )
+{
     if( flags.HAS_BLENDMODE_OVERRIDES ) M2Array blend_maps (T_uint16_t);
+}
 } m2;
 
 
@@ -765,10 +864,18 @@ string readM2Flags( M2Flags& flags )
     string flagsStr;   
     if( flags.TILT_X ) flagsStr += "TILT_X  ";
     if( flags.TILT_Y ) flagsStr += "TILT_Y  ";
+if( xpac >= WOTLK )
+{
     if( flags.HAS_BLENDMODE_OVERRIDES ) flagsStr += "HAS_BLENDMODE_OVERRIDES  ";
+}
+if( xpac >= MOP )
+{
     if( flags.LOAD_PHYSICS_DATA ) flagsStr += "LOAD_PHYSICS_DATA  ";
-    if( flags.HAS_LOD_SKIN_FILES ) flagsStr += "HAS_LOD_SKIN_FILES  ";
-       
+}
+if( xpac >= WOD )
+{ 
+   if( flags.HAS_LOD_SKIN_FILES ) flagsStr += "HAS_LOD_SKIN_FILES  ";
+}      
     if( flagsStr == "" ) flagsStr = "NONE";
     return flagsStr;
 }
