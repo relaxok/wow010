@@ -5,10 +5,14 @@
 //   Authors: DDuarte
 //   Version: 1.0
 //   Purpose: Parse multiple versions of the PKT format (WoW)
+//  Category: wow010
 // File Mask: *.pkt
 //  ID Bytes: 
 //   History:
 //   1.0    2016-04-25 Initial release.
+//
+// More information available at:
+//  https://github.com/TrinityCore/WowPacketParser/blob/master/WowPacketParser/Loading/BinaryPacketReader.cs
 //------------------------------------------------
 
 enum <int16> PktVersion {
@@ -36,20 +40,20 @@ struct Header {
     switch (Version) {
         case V2_1:
             uint16 ClientBuild;
-            byte SessionKey[40];
+            ubyte SessionKey[40];
             break;
         case V2_2:
             byte SnifferId;
             uint16 ClientBuild;
             byte ClientLocale[4];
-            byte PacketKey[20];
+            ubyte PacketKey[20];
             byte RealmName[64];
             break;
         case V3_0:
             byte SnifferId;
             uint32 ClientBuild;
             byte ClientLocale[4];
-            byte SessionKey[40];
+            ubyte SessionKey[40];
             int32 AdditionalLength;
             if (AdditionalLength > 0)
                 byte OptionalData[AdditionalLength];
@@ -58,18 +62,18 @@ struct Header {
             byte SnifferId;
             uint32 ClientBuild;
             byte ClientLocale[4];
-            byte SessionKey[40];
+            ubyte SessionKey[40];
             time_t StartTime;
             uint32 StartTickCount;
             int32 AdditionalLength;
             if (AdditionalLength > 0)
-                byte OptionalData[AdditionalLength];
+                ubyte OptionalData[AdditionalLength];
             break;
     }
 };
 
 local int64 pos = FTell();
-local PktVersion version;
+local PktVersion version = V3_1;
 
 if (ReadByte(pos) == 'P' && ReadByte(pos + 1) == 'K' && ReadByte(pos + 2) == 'T') {
     struct Header header;
@@ -87,10 +91,10 @@ while (!FEof()) {
                 int32 Length;
                 if (Direction == SMSG) {
                     int16 Opcode;
-                    byte Data[Length - 2];
+                    ubyte Data[Length - 2];
                 } else {
                     int16 Opcode;
-                    byte Data[Length - 4];
+                    ubyte Data[Length - 4];
                 }
                 break;     
             case V3_0:
@@ -107,10 +111,10 @@ while (!FEof()) {
                 int32 AdditionalSize;
                 int32 Length;
                 if (AdditionalSize > 0)
-                    byte OptionalData[AdditionalSize];
+                    ubyte OptionalData[AdditionalSize];
                 int32 Opcode;
                 if (Length > 4)
-                    byte Data[Length - 4];
+                    ubyte Data[Length - 4];
                 break;
         }
     } packet<read=ReadPacket>;
