@@ -834,27 +834,3 @@ else if(t_name == "CharStartOutfit.dbc")
     GameObjectDisplayInfoRec records[header.record_count]<optimize=false>;
 } 
  
-else if(t_name == "CharStartOutfit.dbc")
-{
-    CharStartOutfitRec records[header.record_count]<optimize=false>;
-}  
-
-else if(t_name == "CharStartOutfit.dbc")
-{
-    CharStartOutfitRec records[header.record_count]<optimize=false>;
-}
-
-else if(t_name == "CharStartOutfit.dbc")
-{
-    CharStartOutfitRec records[header.record_count]<optimize=false>;
-}  
-
-else if(t_name == "CharStartOutfit.dbc")
-{
-    CharStartOutfitRec records[header.record_count]<optimize=false>;
-}
-
-else if(t_name == "CharStartOutfit.dbc")
-{
-    CharStartOutfitRec records[header.record_count]<optimize=false>;
-}  
