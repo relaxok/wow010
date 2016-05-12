@@ -732,4 +732,105 @@ if (rec.m_continentID==43)
   return ret;
 }
 
-LightRec records[header.record_count]<optimize=false>;
+local string t_name = FileNameGetBase(GetFileName());
+
+if(t_name == "Map.dbc")
+{
+    MapRec records[header.record_count]<optimize=false>;
+}
+
+else if(t_name == "LightSkybox.dbc")
+{
+    LightSkyboxRec records[header.record_count]<optimize=false>;
+}
+
+else if(t_name == "Light.dbc")
+{
+    LightRec records[header.record_count]<optimize=false>;
+}  
+
+else if(t_name == "CameraMode.dbc")
+{
+    CameraModeRec records[header.record_count]<optimize=false>;
+}  
+
+else if(t_name == "SoundEntries.dbc")
+{
+    SoundEntriesRec records[header.record_count]<optimize=false>;
+}  
+
+else if(t_name == "SoundsEntriesAdvanced.dbc")
+{
+    SoundEntriesAdvancedRec records[header.record_count]<optimize=false>;
+}  
+
+else if(t_name == "FileData.dbc")
+{
+    FileDataRec records[header.record_count]<optimize=false>;
+}  
+
+else if(t_name == "VideoHardware.dbc")
+{
+    VideoHardwareRec records[header.record_count]<optimize=false>;
+}  
+
+else if(t_name == "PlayerCondition.dbc")
+{
+    PlayerConditionRec records[header.record_count]<optimize=false>;
+}  
+
+else if(t_name == "SpellMisc.dbc")
+{
+    SpellMiscRec records[header.record_count]<optimize=false>;
+}  
+
+else if(t_name == "CharBaseInfo.dbc")
+{
+    CharBaseInfoRec records[header.record_count]<optimize=false>;
+}  
+
+else if(t_name == "SpellItemEnchantmentCondition.dbc")
+{
+    SpellItemEnchantmentConditionRec records[header.record_count]<optimize=false>;
+}  
+
+else if(t_name == "SpellEffect.dbc")
+{
+    SpellEffectRec records[header.record_count]<optimize=false>;
+}  
+
+else if(t_name == "AnimationData.dbc")
+{
+    AnimationDataRec records[header.record_count]<optimize=false>;
+}
+  
+else if(t_name == "Faction.dbc")
+{
+    FactionRec records[header.record_count]<optimize=false>;
+} 
+ 
+else if(t_name == "GroundEffectTexture.dbc")
+{
+    GroundEffectTextureRec records[header.record_count]<optimize=false>;
+}
+  
+else if(t_name == "PvpDifficulty.dbc")
+{
+    PvpDifficultyRec records[header.record_count]<optimize=false>;
+}
+  
+else if(t_name == "WMOAreaTable.dbc")
+{
+    WMOAreaTableRec records[header.record_count]<optimize=false>;
+} 
+ 
+else if(t_name == "CharStartOutfit.dbc")
+{
+    CharStartOutfitRec records[header.record_count]<optimize=false>;
+}  
+ 
+ else if(t_name == "GameObjectDisplayInfo.dbc")
+{
+    GameObjectDisplayInfoRec records[header.record_count]<optimize=false>;
+} 
+ 
