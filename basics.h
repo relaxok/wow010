@@ -566,7 +566,7 @@ string T_array_read (int t, int size, int offset)
       }
       for (i = 1; i < size; ++i)
       {
-        SPrintf (s, "%s, %u", s, ReadUShort (offset + i * 4));
+        SPrintf (s, "%s, %u", s, ReadUShort (offset + i * 2));
       }
       return s;
     }
@@ -580,7 +580,21 @@ string T_array_read (int t, int size, int offset)
       }
       for (i = 1; i < size; ++i)
       {
-        SPrintf (s, "%s, %i", s, ReadShort (offset + i * 4));
+        SPrintf (s, "%s, %i", s, ReadShort (offset + i * 2));
+      }
+      return s;
+    }
+  case T_float:
+    {
+      int i;
+      string s;
+      if (size != 0)
+      {
+        SPrintf (s, "%s%f", s, ReadFloat (offset));
+      }
+      for (i = 1; i < size; ++i)
+      {
+        SPrintf (s, "%s, %f", s, ReadFloat (offset + i * 4));
       }
       return s;
     }
