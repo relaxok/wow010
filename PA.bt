@@ -1,0 +1,58 @@
+//------------------------------------------------
+//--- 010 Editor v7.0.2 Binary Template
+//
+//      File: 
+//   Authors: 
+//   Version: 
+//   Purpose: 
+//  Category: 
+// File Mask: 
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+
+char P; char A;
+char version;
+char key_size_a;
+char key_size_b;
+char key_size_c;
+char key_size_d;
+short entry_count;
+char unk2;
+
+char encoding_key[16];
+char decoded_encoding_key[16];
+uint32 encoding_size;
+uint32 decoded_encoding_size;
+char desc_size;
+char desc[desc_size];
+
+struct entry
+{
+  char key[key_size_a];
+  char md5[key_size_b];
+  uint32 offset;
+} entries[entry_count];
+
+local int i;
+for (i=0; i < entry_count; ++i)
+{
+  FSeek (entries[i].offset);
+  struct x
+  {
+    struct e
+    {
+      char num_entries;
+      char key[key_size_a];
+      char unk;uint unk_;
+      struct {
+        char key[key_size_a];
+        char unk;uint unk_;
+        char key2[key_size_c];
+        char unk2;uint unk2_;
+      } sub_entries[num_entries];
+    };
+    while (ReadByte() != 0) 
+      e x<optimize=false>;
+  } y;
+}

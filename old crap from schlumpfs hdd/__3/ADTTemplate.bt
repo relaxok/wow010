@@ -1,0 +1,159 @@
+//--------------------------------------
+//--- 010 Editor v3.0.2 Binary Template
+//
+// File:
+// Author:
+// Revision:
+// Purpose:
+//--------------------------------------
+
+typedef struct   {
+/*000h*/  CHAR identifier[4];
+/*004h*/  UINT32 size;		
+} Chunk <read=showChunk>;
+
+string showChunk(Chunk &cnk) {
+    local string temp;
+    SPrintf(temp,"%s, %xh bytes",cnk.identifier, cnk.size);
+    return temp;
+}
+
+typedef struct  {
+/*-04h*/  Chunk _c;
+/*000h*/  UINT32 pad <format=hex>;
+/*004h*/  UINT32 offsInfo <format=hex>;		
+/*008h*/  UINT32 offsTex <format=hex>;		
+/*00Ch*/  UINT32 offsModels <format=hex>;		
+/*010h*/  UINT32 offsModelsIds <format=hex>;		
+/*014h*/  UINT32 offsMapObejcts <format=hex>;		
+/*018h*/  UINT32 offsMapObejctsIds <format=hex>;		
+/*01Ch*/  UINT32 offsDoodsDef <format=hex>;		
+/*020h*/  UINT32 offsObjectsDef <format=hex>;	
+/*024h*/  UINT32 offsFlightBoundary <format=hex>; // tbc, wotlk	
+/*028h*/  UINT32 offsMH2O <format=hex>;		// new in WotLK
+/*02Ch*/  UINT32 pad3 <format=hex>;	
+/*030h*/  UINT32 pad4 <format=hex>;		
+/*034h*/  UINT32 pad5 <format=hex>;		
+/*038h*/  UINT32 pad6 <format=hex>;		
+/*03Ch*/  UINT32 pad7 <format=hex>;	
+/*040h*/
+} MHDR;
+
+typedef struct { 
+/*-04h*/  Chunk _c;
+/*000h*/  int32 version;
+} MVER;
+
+typedef struct {
+/*000h*/  UINT32 offset <format=hex>;
+/*004h*/  UINT32 size <format=hex>;		
+/*008h*/  UINT32 flags;		
+/*00Ch*/  UINT32 asyncId;	
+} MCIN_content;
+
+typedef struct {
+/*-04h*/  Chunk _c;
+/*000h*/  MCIN_content list[256];
+} MCIN;
+
+typedef struct {
+    char filename[];
+} Filename <read=ShowFilename>;
+
+string ShowFilename(Filename &in) {
+    return in.filename;
+}
+
+typedef struct {
+    local int start = FTell();
+/*-04h*/  Chunk _c;
+/*000h*/  while(FTell() < start+_c.size) { Filename name; }
+} MTEX;
+
+typedef struct {
+    local int start = FTell();
+/*-04h*/  Chunk _c;
+/*000h*/  while(FTell() < start+_c.size) { Filename name; }
+} MMDX;
+
+typedef struct {
+/*-04h*/  Chunk _c;
+/*000h*/  local int start = FTell(); while(FTell() < start+_c.size) { uint32 offset <format=hex>; }
+} MMID;
+
+typedef struct {
+/*-04h*/  Chunk _c;
+/*000h*/  local int start = FTell(); while(FTell() < start+_c.size) { Filename name; }
+} MWMO;
+
+typedef struct {
+/*-04h*/  Chunk _c;
+/*000h*/  local int start = FTell(); while(FTell() < start+_c.size) { uint32 offset <format=hex>; }
+} MWID;
+
+typedef struct {
+/*000h*/  UINT32 nameId;
+/*004h*/  UINT32 uniqueId;		
+/*008h*/  float pos[3];		
+/*014h*/  float rot[3];		
+/*020h*/  UINT16 flags;	
+/*022h*/  UINT16 scale;
+} MDDF_content;
+
+typedef struct {
+/*-04h*/  Chunk _c;
+/*000h*/  MDDF_content list[_c.size/36];
+} MDDF;
+
+typedef struct {
+/*000h*/  UINT32 nameId;		
+/*004h*/  UINT32 uniqueId;		
+/*008h*/  float pos[3];
+/*014h*/  float rot[3];
+/*020h*/  float extents[6];
+/*038h*/  UINT32 flags;		
+/*03Ch*/  UINT16 doodadSet;
+/*03Eh*/  UINT16 nameSet;
+} MODF_content;
+
+typedef struct {
+/*-04h*/  Chunk _c;
+/*000h*/  MODF_content list[_c.size/64];
+} MODF;
+
+
+MVER VER;
+MHDR HDR;
+
+if(HDR.offsInfo!=0) {
+    FSeek(HDR.offsInfo);
+    MCIN CIN;
+}
+if(HDR.offsInfo!=0) {
+    FSeek(HDR.offsTex);
+    MTEX TEX;
+}
+if(HDR.offsInfo!=0) {
+    FSeek(HDR.offsModels);
+    MMDX MDX;
+}
+if(HDR.offsInfo!=0) {
+    FSeek(HDR.offsModelsIds);
+    MMID MID;
+}
+if(HDR.offsInfo!=0) {
+    FSeek(HDR.offsMapObjects);
+    MWMO WMO;
+}
+if(HDR.offsInfo!=0) {
+    FSeek(HDR.offsMapObjectsIds);
+    MWID WID;
+}
+if(HDR.offsInfo!=0) {
+    FSeek(HDR.offsDoodsDef);
+    MDDF DDF;
+}
+if(HDR.offsInfo!=0) {
+    FSeek(HDR.offsObjectsDef);
+    MODF ODF;
+}

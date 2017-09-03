@@ -1,0 +1,185 @@
+#include "M2_Types.bt"
+
+FSeek(0);
+struct GI {
+    HEADER header;
+
+    FSeek( header.ofsName );
+    char ModelName[header.lName];
+    FSeek(0);
+} GeneralInformation <read=CommentGI>;
+
+//--------------------------------------
+
+FSeek(0);
+struct AR {
+    FSeek( GeneralInformation.header.ofsGlobalSequences);
+    uint32 GlobalSequences[GeneralInformation.header.nGlobalSequences];
+    FSeek(0);
+
+    FSeek(0);
+    struct AR_A {
+        FSeek( GeneralInformation.header.ofsAnimations );
+        ANIMATION AnimationSequences[GeneralInformation.header.nAnimations];
+    
+        FSeek( GeneralInformation.header.ofsAnimationLookup);
+        short AnimationLookupTable[GeneralInformation.header.nAnimationLookup];
+    
+        FSeek( GeneralInformation.header.ofsD);
+        SS BlockD[GeneralInformation.header.nD];
+    } AnimationsAndLookups <read=CommentAR_A>;
+
+    FSeek(0);
+    struct AR_B {
+        FSeek( GeneralInformation.header.ofsBones);
+        BONE Bones[GeneralInformation.header.nBones];
+
+        FSeek( GeneralInformation.header.ofsBoneLookupTable);
+        short BoneLookup[GeneralInformation.header.nBoneLookupTable];
+        
+        FSeek( GeneralInformation.header.ofsSkelBoneLookup);
+        short SkeletalBoneLookup[GeneralInformation.header.nSkelBoneLookup];
+    
+    } BonesAndLookups <read=CommentAR_B>;
+    FSeek(0);
+} AnimationRelated <read=CommentAR>;
+
+//--------------------------------------
+
+FSeek(0);
+struct GAR {
+    FSeek( GeneralInformation.header.ofsVertices);
+    VERTEX Vertices[GeneralInformation.header.nVertices];
+
+    FSeek( GeneralInformation.header.ofsViews);
+    VIEW Views[GeneralInformation.header.nViews];
+
+    FSeek( GeneralInformation.header.ofsRenderFlags);
+    RENDERFLAG Renderflags[GeneralInformation.header.nRenderFlags];
+
+    FSeek(0);
+    struct GAR_CT {
+        FSeek( GeneralInformation.header.ofsColors);
+        COLOR Colors[GeneralInformation.header.nColors];
+
+        FSeek( GeneralInformation.header.ofsTransparency);
+        TRANSPARENCY Transparency[GeneralInformation.header.nTransparency];
+
+        FSeek( GeneralInformation.header.ofsTransLookup);
+        uint16 TransparencyLookup[GeneralInformation.header.nTransLookup];
+        FSeek(0);
+    } ColorsAndTransparency <read=CommentGAR_CT>;
+
+    FSeek(0);
+    struct GAR_T {
+        FSeek( GeneralInformation.header.ofsTextures);
+        TEXTURE Textures[GeneralInformation.header.nTextures];
+
+        FSeek( GeneralInformation.header.ofsTexLookup);
+        uint16 TexturesLookup[GeneralInformation.header.nTexLookup];
+
+        FSeek( GeneralInformation.header.ofsTexAnims);
+        TEXTUREANIM TextureAnimations[GeneralInformation.header.nTexAnims];
+
+        FSeek( GeneralInformation.header.ofsTexAnimLookup);
+        int16 TextureAnimationLookup[GeneralInformation.header.nTexAnimLookup];
+
+        FSeek( GeneralInformation.header.ofsTexReplace);
+        int16 TextureReplaceLookup[GeneralInformation.header.nTexReplace];
+
+        FSeek( GeneralInformation.header.ofsTexUnitLookup);
+        int16 TextureUnitLookup[GeneralInformation.header.nTexUnitLookup];
+        FSeek(0);
+    } TexturesAndTheirAnimations <read=CommentGAR_T>;
+    FSeek(0);
+} GeometryAndRendering <read=CommentGAR>;
+
+//--------------------------------------
+
+FSeek(0);
+struct EF {
+    FSeek( GeneralInformation.header.ofsParticleEmitters);
+    PARTICLEEMITTER ParticleEmitters[GeneralInformation.header.nParticleEmitters];
+    
+    FSeek( GeneralInformation.header.ofsRibbonEmitters);
+    RIBBONEMITTER RibbonEmitters[GeneralInformation.header.nRibbonEmitters];
+    FSeek(0);
+} Effects <read=CommentEF>;
+
+//--------------------------------------
+
+FSeek(0);
+struct MSC {
+    FSeek( GeneralInformation.header.ofsLights);
+    LIGHT Lights[GeneralInformation.header.nLights];
+    
+    FSeek( GeneralInformation.header.ofsCameras);
+    CAMERA Cameras[GeneralInformation.header.nCameras];
+    
+    FSeek( GeneralInformation.header.ofsCameraLookup);
+    int16 CameraLookup[GeneralInformation.header.nCameraLookup];
+
+    FSeek(0);
+    struct MSC_A {
+        FSeek( GeneralInformation.header.ofsAttachments);
+        ATTACHMENT Attachments[GeneralInformation.header.nAttachments];
+        
+        FSeek( GeneralInformation.header.ofsAttachLookup);
+        int16 AttachmentLookup[GeneralInformation.header.nAttachLookup];
+        
+        FSeek( GeneralInformation.header.ofsAttachments2);
+        ATTACHMENT2 AttachmentsType2[GeneralInformation.header.nAttachments2];
+        FSeek(0);
+    } Attachments <read=CommentMSC_A>;
+
+    FSeek(0);
+    struct MSC_B {
+        FSeek( GeneralInformation.header.ofsBoundingTriangles);
+        Vec3D BTriangles[GeneralInformation.header.nBoundingTriangles];
+        FSeek( GeneralInformation.header.ofsBoundingVertices);
+        TI BVertices[GeneralInformation.header.nBoundingVertices];
+        FSeek( GeneralInformation.header.ofsBoundingNormals);
+        Vec3D BNormals[GeneralInformation.header.nBoundingNormals];
+        FSeek(0);
+    } BoundingVolume <read=CommentMSC_B>;
+    FSeek(0);
+} Miscellaneous <read=CommentMSC>;
+
+//--------------------------------------
+
+string CommentGI(GI &voi) {
+    return ("The header and the model's name.");
+}
+string CommentAR(AR &voi) {
+    return ("Animation-tables, bones and global sequences.");
+}
+string CommentAR_A(AR_A &voi) {
+    return ("Here is stored, which timestamps are used for what.");
+}
+string CommentAR_B(AR_B &voi) {
+    return ("The bones describe how the model moves.");
+}
+string CommentGAR(GAR &voi) {
+    return ("The data for rendering the model.");
+}
+string CommentGAR_CT(GAR_CT &voi) {
+    return ("Colors and transparency. Where are colors used?");
+}
+string CommentGAR_T(GAR_T &voi) {
+    return ("Textures and their animations.");
+}
+string CommentEF(EF &voi) {
+    return ("Particles and ribbons. ");
+}
+string CommentMSC(MSC &voi) {
+    return ("Cameras, lights, boundings, attachments. ");
+}
+string CommentMSC_A(MSC_A &voi) {
+    return ("Attachments are used for weapons, spells etc.");
+}
+string CommentMSC_B(MSC_B &voi) {
+    return ("To let the client make the model collidable.");
+}
+
+
+

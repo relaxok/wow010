@@ -1,0 +1,102 @@
+// Custom Types
+
+typedef struct {
+
+   float x, y, z;
+} Vec3D;
+
+typedef struct {
+SetColor( cDkGray , cLtGray  );
+   char c[4];
+SetColor( cWhite , cLtGray  );
+   uint32 length;
+SetColor( cNone, cNone );
+} chunkheader;
+
+typedef struct {
+   ubyte R, G, B, A;
+} ambcol;
+
+// Structures
+
+typedef struct {
+          chunkheader _c;
+          uint32 version;
+} VER;
+
+typedef struct {
+          chunkheader _c;
+/*000h*/  UINT32 nTextures;		
+/*004h*/  UINT32 nGroups;		
+/*008h*/  UINT32 nPortals;		
+/*00Ch*/  UINT32 nLights;		
+/*010h*/  UINT32 nModels;		
+/*014h*/  UINT32 nDoodads;		
+/*018h*/  UINT32 nSets;		
+          ambcol ambCols;
+/*020h*/  UINT32 wmoID;
+/*024h*/  Vec3D  bb1;
+/*030h*/  Vec3D  bb2;
+/*03Ch*/  UINT32 nullish;	
+} OHD;
+
+typedef struct {
+          chunkheader _c;
+          char Data[_c.length];
+} OTX;
+
+typedef struct {
+          uint32  unk;
+          uint32  flags;
+          uint32  blend;
+          uint32  startnameindex;
+          ambcol  Colors;
+          uint32  unk;
+          uint32  endNameIndex;
+          uint32  Color[3];
+          uint32  envNameIndex;
+          float   diffColor[3];
+          uint32  Type;
+          uint32  unk;
+} OMT_content;
+
+typedef struct {
+          chunkheader _c;
+          OMT_content Data[_c.length/64];
+} OMT;
+
+typedef struct {
+          chunkheader _c;
+          char Data[_c.length];
+} OGN;
+
+typedef enum <UINT32> { OGI_Outdoor = 0x8, OGI_Indoor = 0x2000, OGI_Stormwind = 0x10000, OGI_ShowSkybox = 0x40000 } OGI_FLAGS;
+
+typedef struct {
+/*000h*/  OGI_FLAGS flags;  		
+/*004h*/  Vec3D  bb1;  		
+/*010h*/  Vec3D  bb2;		
+/*01Ch*/  INT32 nameoffset;
+} OGI_content;
+
+typedef struct {
+          chunkheader _c;
+          OGI_content Data[_c.length/32];
+} OGI;
+
+typedef struct {
+    chunkheader _c;
+    char Data[_c.length];
+} FILLER;
+
+
+
+// File
+
+VER Version;
+OHD Header;
+OTX TextureData;
+OMT Materials;
+OGN GroupNames;
+OGI GroupInformation;
+FILLER all[20] <optimize=false>;

@@ -1,0 +1,14 @@
+//--------------------------------------
+//--- 010 Editor v3.0.2 Script File
+//
+// File:
+// Author:
+// Revision:
+// Purpose:
+//--------------------------------------
+int edited = 0x188;
+int inserted = 0x4;
+
+if(ReadInt(GetSelStart())>edited) {
+    WriteInt(GetSelStart(),ReadInt(GetSelStart())+inserted);
+}

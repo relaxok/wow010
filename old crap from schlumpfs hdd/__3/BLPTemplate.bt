@@ -1,0 +1,46 @@
+//--------------------------------------
+//--- 010 Editor v3.0.2 Binary Template
+//
+// File:
+// Author:
+// Revision:
+// Purpose:
+//--------------------------------------
+
+typedef enum <uchar> { C_Uncompressed = 1, C_DXTC = 2} E_COMPRESSION;
+
+typedef struct {
+    uchar B <format=decimal>;
+    uchar G <format=decimal>;
+    uchar R <format=decimal>;
+    uchar A <format=decimal>;
+} BGRA;
+
+typedef struct {
+    char magic[4];		//always 'BLP2'
+    uint32 version;		//Version, always 1
+    E_COMPRESSION compression;		//Compression: 1 for uncompressed, 2 for DXTC
+    uchar alphadepth; 		//Alpha channel bit depth: 0, 1 or 8
+    uchar alphawhatever; 		//Something about alpha? (compressed, alpha:0 or 1): 0, (compressed, alpha:8): 1, uncompressed: 2,4 or 8 (mostly 8)
+    uchar mipmap; 		//when 0 there is only 1 mipmaplevel. compressed: 0, 1 or 2, uncompressed: 1 or 2 (mostly 1)
+    uint32 xres;		//X resolution (power of 2)
+    uint32 yres;		//Y resolution (power of 2)
+    uint32 ofsmipmaps[16] <format=hex>; 	//offsets for every mipmap level (or 0 when there is no more mipmap level)
+    uint32 sizemipmaps[16] <format=hex>; 	//sizes for every mipmap level (or 0 when there is no more mipmap level
+} BLP_header;
+
+BLP_header header;
+
+if(header.compression == C_Uncompressed) 
+{
+    BGRA palette[256];
+    local int i = 0;
+    for ( i = 0; i<16; i++)
+    {
+        struct BLP_UData {
+            FSeek(header.ofsmipmaps[i]);
+            uchar indices[header.sizemipmaps[i]];
+        } Data;
+        FSeek(0);
+    }
+}

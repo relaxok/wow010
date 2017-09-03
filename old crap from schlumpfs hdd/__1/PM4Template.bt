@@ -1,0 +1,211 @@
+
+local int cOffset = cLtYellow;local int cFileName = cLtAqua;local int cVector = cLtPurple;
+
+// basic chunk structure
+//--------------------------------------------------
+typedef struct {
+    // always important to know!
+    local uint32 myOffset = FTell();
+    local uint32 myDataStart = myOffset + 8;
+
+    // color
+    SetColor( cWhite, cDkRed );
+
+    // magic value
+    char magic[4];
+
+    // color #2
+    SetColor( cBlack, 0x99CCFF );
+    
+    // data size
+    uint32 byte_size;
+
+    // normal color plz    SetColor( cBlack, cWhite );
+} _chunk <read=chunkGetMagic>;
+
+    // displays the magic and the size of this chunk
+    string chunkGetMagic(_chunk &c) {
+        string s;
+        SPrintf( s, 
+            "%c%c%c%c: %i Byte", 
+            c.magic[3], c.magic[2], c.magic[1], c.magic[0], c.byte_size
+        ); 
+        return s;
+    };
+
+// offset including features
+//--------------------------------------------------
+typedef struct {
+    local uint32 myOffset = FTell();
+
+    // we store this value for calculations
+    local uint32 upperChunkOffset = 0;
+
+    SetColor( cBlack, cOffset );
+    
+    UINT32 adress   <format=hex>;
+    
+    SetStdColor();
+
+    local int doString = 0;
+}offset <read=offsetGetADR>;
+
+    // displays where this pointer is pointing to
+    string offsetGetADR(offset &o) {
+        string s;
+        // just an offset ?
+        if(o.upperChunkOffset==0) {
+            char temp[4];
+            ReadBytes(temp, o.adress+o.myOffset,4 );
+            SPrintf( s, "+ %i Byte: %s", o.adress, temp);
+       //     SPrintf( s, "+ %i Byte", o.adress);
+        }
+        // global offset
+        else {
+            // zero?
+            if(o.adress==0 && o.doString == 0) return "- unused - ";
+
+            if(o.doString == 0)
+            {
+                char temp[4];
+                ReadBytes(temp, o.adress+o.upperChunkOffset,4 );
+                SPrintf( s, "-> 0x%02X: %s", o.adress, temp);
+            }
+            else
+            {
+                SPrintf( s, "-> 0x%02X: %s", o.adress, ReadString(o.adress+o.upperChunkOffset));
+            }
+   
+
+         //   SPrintf( s, "-> 0x%02X", o.adress+o.upperChunkOffset);
+        }
+        return s;
+    }
+// filename - ... because 010 want it so
+//--------------------------------------------------
+typedef struct {
+    SetColor( cBlack, cFileName );
+   
+    string value;
+
+    SetStdColor();
+} filename <read=filenameRead>;
+    
+    string filenameRead(filename &f) {
+        return f.value;
+    };
+
+
+// Vector3D
+//--------------------------------------------------
+typedef struct {
+    SetColor( cBlack, cVector );
+   
+    float x, y, z;
+
+    SetStdColor();
+} Vector3D <read=Vector3DRead>;
+    
+    string Vector3DRead(Vector3D &f) {
+        string s;
+SPrintf(s,"(%f %f %f)", f.x, f.y, f.z);
+return s;
+    };
+
+void SetStdColor()
+{    SetColor( cBlack, cWhite );
+}
+
+
+// CHNK - unknown chunk
+//--------------------------------------------------
+typedef struct {
+        _chunk hdr;
+        unsigned byte data[hdr.byte_size] <format=hex>;
+} CHNK;
+
+typedef struct {
+    _chunk hdr;
+    uint32 version;
+} MVER;
+
+typedef struct {
+  uint16 unk;
+  int16 unk;
+  uint16 unk;
+  uint16 unk;
+  Vector3D vec;
+  uint32 unk;
+} MPRLentry;
+
+typedef struct {
+    _chunk hdr;
+    MPRLentry entries[hdr.byte_size / 24];
+} MPRL;
+
+typedef struct {
+  _chunk hdr;
+  uint32 destructibles;
+} MDBH;
+
+typedef struct {
+  _chunk hdr;
+  char name[hdr.byte_size];
+} MDBF;
+
+MVER mver;
+MPRL mprl;
+CHNK mprr;
+MDBH mdbh;
+typedef struct {
+  CHNK mdbi;
+  MDBF damaged;
+  MDBF destroyed;
+  MDBF construction;
+} destructible;
+destructible destructibles[mdbh.destructibles]<optimize=false>;
+typedef struct {
+  _chunk hdr;
+  uint32 unk;
+  uint32 unk;
+  uint32 unk;
+  uint32 unk;
+  uint32 unk;
+  uint32 unk;
+  uint32 unk;
+  uint32 unk;
+} MSHD;
+MSHD mshd;
+typedef struct {
+  _chunk hdr;
+  Vector3D vertices[hdr.byte_size/12];
+} MSPV;
+MSPV mspv;
+typedef struct {
+  _chunk hdr;
+  uint32 infos[hdr.byte_size/4];
+} MSPI;
+MSPI mspi;
+typedef struct {
+  _chunk hdr;
+  Vector3D vertices[hdr.byte_size/12];
+} MSCN;
+MSCN mscn;
+CHNK mslk;
+typedef struct {
+  _chunk hdr;
+  Vector3D vertices[hdr.byte_size/12];
+} MSVT;
+MSVT msvt;
+CHNK msvi;
+CHNK msur;
+typedef struct {
+  uint32 a;
+  uint32 b;
+} MDOSentry;
+typedef struct {
+  _chunk hdr;
+  MDOSentry entries[hdr.byte_size / 8];
+} MDOS;
+MDOS mdos;
+CHNK mdfs;

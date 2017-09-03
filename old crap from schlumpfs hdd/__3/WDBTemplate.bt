@@ -1,0 +1,28 @@
+//--------------------------------------
+//--- 010 Editor v3.0.2 Binary Template
+//
+// File: WDB
+// Author:
+// Revision:
+// Purpose:
+//--------------------------------------
+
+
+char magic[4];
+int ClientVersion;
+char ClientLocal[4];
+int rowlen;
+int unk;
+
+struct {
+int	itemID;
+int 	entryLength;
+int 	itemClassID ;
+int 	itemSubClassID ;
+int 	Unknown ;
+char 	name[];
+char 	name[];
+char 	name[];
+char 	name[];
+int 	itemdisplayID;
+} entries;

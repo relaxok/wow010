@@ -1,0 +1,420 @@
+typedef struct AnimationBlock_ {
+	int16 type;		// interpolation type (0=none, 1=linear, 2=hermite)
+	int16 seq;		// global sequence id or -1
+	uint32 nRanges;
+	uint32 ofsRanges <format=hex>;
+	uint32 nTimes;
+	uint32 ofsTimes <format=hex>;
+	uint32 nKeys;
+	uint32 ofsKeys <format=hex>;
+} AnimationBlock;
+
+typedef struct Vec3D_ {
+    float x,y,z;
+} Vec3D;
+
+typedef struct ThreeIndices {
+    ushort a,b,c;
+} TI;
+
+void readAnimBlock(int ofsRanges, int nRanges, int ofsTimes, int nTimes, int ofsKeys, int nKeys)
+{
+local int ppos = FTell();
+        FSeek(ofsRanges);
+        uint32 ranges[nRanges];
+        FSeek(ofsTimes);
+        uint32 times[nTimes];
+        FSeek(ofsKeys);
+        uint32 keys[nKeys];
+FSeek(ppos);
+}
+
+
+//--------------------------------------
+//--- 010 Editor v3.0.2 Binary Template
+//
+// File:
+// Author:
+// Revision:
+// Purpose:
+//--------------------------------------
+struct ZY
+{
+    char magic[4];
+    int ver;
+	uint32 lName;
+	uint32 ofsName;
+
+	uint32 type;
+
+	uint32 nGlobalSequences;
+	uint32 ofsGlobalSequences <format=hex>;
+	uint32 nAnimations;
+	uint32 ofsAnimations <format=hex>;
+	uint32 nAnimationLookup;
+	uint32 ofsAnimationLookup <format=hex>;
+	uint32 nD;
+	uint32 ofsD <format=hex>;
+	uint32 nBones;
+	uint32 ofsBones <format=hex>;
+	uint32 nSkelBoneLookup;
+	uint32 ofsSkelBoneLookup <format=hex>;
+
+	uint32 nVertices;
+	uint32 ofsVertices <format=hex>;
+	uint32 nViews;
+	uint32 ofsViews <format=hex>;
+
+	uint32 nColors;
+	uint32 ofsColors <format=hex>;
+
+	uint32 nTextures;
+	uint32 ofsTextures <format=hex>;
+
+	uint32 nTransparency; // H
+	uint32 ofsTransparency <format=hex>;
+	uint32 nI;   // always unused ?
+	uint32 ofsI <format=hex>;
+	uint32 nTexAnims;	// J
+	uint32 ofsTexAnims <format=hex>;
+	uint32 nTexReplace;
+	uint32 ofsTexReplace <format=hex>;
+
+	uint32 nTexFlags;
+	uint32 ofsTexFlags <format=hex>;
+	uint32 nY;
+	uint32 ofsY <format=hex>;
+
+	uint32 nTexLookup;
+	uint32 ofsTexLookup <format=hex>;
+
+	uint32 nTexUnitLookup;		// L
+	uint32 ofsTexUnitLookup <format=hex>;
+	uint32 nTransparencyLookup; // M
+	uint32 ofsTransparencyLookup <format=hex>;
+	uint32 nTexAnimLookup;
+	uint32 ofsTexAnimLookup <format=hex>;
+
+	float floats[14];
+
+	uint32 nBoundingTriangles;
+	uint32 ofsBoundingTriangles <format=hex>;
+	uint32 nBoundingVertices;
+	uint32 ofsBoundingVertices <format=hex>;
+	uint32 nBoundingNormals;
+	uint32 ofsBoundingNormals <format=hex>;
+
+	uint32 nAttachments; // O
+	uint32 ofsAttachments <format=hex>;
+	uint32 nAttachLookup; // P
+	uint32 ofsAttachLookup <format=hex>;
+	uint32 nAttachments2; // Q
+	uint32 ofsAttachments2 <format=hex>;
+	uint32 nLights; // R
+	uint32 ofsLights <format=hex>;
+	uint32 nCameras; // S
+	uint32 ofsCameras <format=hex>;
+	uint32 nT;
+	uint32 ofsT <format=hex>;
+	uint32 nRibbonEmitters; // U
+	uint32 ofsRibbonEmitters <format=hex>;
+	uint32 nParticleEmitters; // V
+	uint32 ofsParticleEmitters <format=hex>;
+} header;
+
+FSeek( header.ofsName );
+struct ZZ {
+    char name[header.lName];
+} ModelName;
+
+FSeek( header.ofsGlobalSequences);
+struct A {
+    uint32 stamp[header.nGlobalSequences];
+} Sequences;
+
+FSeek( header.ofsAnimations );
+struct B {
+	uint32 animID;
+	uint32 timeStart;
+	uint32 timeEnd;
+
+	float moveSpeed;
+
+    enum <uint32> E_ANIMATIONLOOP { AL_Looped = 0, AL_NotLooped} looped;
+
+	uint32 flags <format=binary>;
+	uint32 d1;
+	uint32 d2;
+	uint32 playSpeed;  // note: this can't be play speed because it's 0 for some models
+
+	float boxA[3];
+    float boxB[3];
+	float rad;
+
+	int16 nextAnimation;
+	int16 s2;
+} animations[header.nAnimations];
+
+FSeek( header.ofsAnimationLookup);
+struct C {
+    short id[header.nAnimationLookup];
+} AnimationLookup;
+
+FSeek( header.ofsD);
+struct D {
+    short a,b;
+} BlockD[header.nD];
+
+FSeek( header.ofsBones);
+struct E {
+	int32 animid;
+    enum <int32> E_BONESFLAGS { BF_None = 0, BF_Billboard = 8, BF_Transformed = 512, BF_BillboardAndTransformed = 520} flags;
+	int16 parent;
+	int16 geoid;
+	int16 unknown;
+	int16 unknown2;
+	AnimationBlock translation;
+	AnimationBlock rotation;
+	AnimationBlock scaling;
+	Vec3D pivot;
+} Bones[header.nBones];
+
+FSeek( header.ofsSkelBoneLookup);
+struct F {
+    short bone[header.nSkelBoneLookup];
+} SkelettalBoneLookup;
+
+FSeek( header.ofsVertices);
+struct G {
+	Vec3D pos;
+	uchar weights[4] <format=decimal>;
+	uchar bones[4] <format=decimal>;
+	Vec3D normal;
+	float texcoords[2];
+	long unk;
+} Vertices[header.nVertices];
+
+FSeek( header.ofsViews);
+struct H {
+    uint32 nIndex;
+    uint32 ofsIndex <format=hex>; // Vertices in this model (index into vertices[])
+    uint32 nTris;
+    uint32 ofsTris <format=hex>;	 // indices
+    uint32 nProps;
+    uint32 ofsProps <format=hex>; // additional vtx properties
+    uint32 nSub;
+    uint32 ofsSub <format=hex>;	 // materials/renderops/submeshes
+    uint32 nTex;
+    uint32 ofsTex <format=hex>;	 // material properties/textures
+	int32 lod;				 // LOD bias?
+} Views[header.nViews];
+
+struct H_ {
+local int i;
+local int zz;
+    for(i = 0;i<header.nViews;i++)
+    {
+        struct H_A {
+            FSeek(Views[i].ofsIndex);
+            zz = Views[i].nIndex;
+            ushort Indices[zz];
+
+            FSeek(Views[i].ofsTris);
+            zz = Views[i].nTris/3;
+            TI Triangles[zz];
+
+            FSeek(Views[i].ofsProps);
+            zz = Views[i].nProps;
+            int VertexProperties[zz];
+
+            FSeek(Views[i].ofsSub);
+            zz = Views[i].nSub;
+            struct H_B {
+	            uint32 MeshId;		// mesh part id?
+	            uint16 sVertices;	// first vertex
+	            uint16 nVertices;	// num vertices
+	            uint16 sIndices;	// first index
+	            uint16 nIndices;	// num indices
+	            uint16 nBonelookup;		// number of bone indices
+	            uint16 sBonelookup;		// ? always 1 to 4
+	            uint16 unknown;		// ?
+	            uint16 rootbone;		// root bone?
+	            Vec3D vector;
+	            float unknown2[4];	// Added in WoW 2.0?
+            } Submeshes[zz];
+
+            FSeek(Views[i].ofsTex);
+            zz = Views[i].nTex;
+            struct H_C {
+                enum <uchar> E_VIEW_TEXUNITFLAGS { TU_Animated = 0, TU_Static = 16} flags;
+	            uchar flags2;		// Flags
+	            uint16 order;		// ?
+	            uint16 submesh;			// Material this texture is part of (index into mat)
+	            uint16 submesh2;			// Always same as above?
+	            int16 colorIndex;	// color or -1
+	            uint16 flagsIndex;	// more flags...
+	            uint16 texunit;		// Texture unit (0 or 1)
+	            uint16 d4;			// ? (seems to be always 1)
+	            uint16 textureid;	// Texture id (index into global texture list)
+	            uint16 texunit2;	// copy of texture unit value?
+	            uint16 transid;		// transparency id (index into transparency list)
+	            uint16 texanimid;	// texture animation id
+            } TextureUnits[zz];
+        } Data;
+    }
+} Views_Data;
+
+
+FSeek( header.ofsTexAnims);
+struct asdasd {
+	AnimationBlock trans, rot, scale;
+} ModelTexAnimDefs[header.nTexAnims];
+
+
+
+
+
+FSeek( header.ofsTexFlags);
+struct RENDERFLAGS {
+    enum <ushort> E_RENDERFLAGS { RF_None = 0, RF_Unlit, RF_Unfogged, RF_TwoSided = 4, RF_ZBuffered = 16} flags;
+    enum <ushort> E_RENDERMODES { RM_Opaque = 0, RM_AlphaTesting, RM_AlphaBlending, RM_Additive , RM_AdditiveAlpha, RM_Modulate, RM_DeeprumTram } blendingmode;
+} Renderflags[header.nTexFlags];
+
+
+FSeek( header.ofsColors);
+struct ModelColorDef {
+	AnimationBlock color;
+	AnimationBlock opacity;
+} Colors[header.nColors];
+
+
+FSeek( header.ofsTransparency);
+struct ModelTransDef {
+	AnimationBlock trans;
+} Transparency[header.nTransparency];
+
+struct zzzz {
+    readAnimBlock(Transparency.trans.ofsRanges,Transparency.trans.nRanges,Transparency.trans.ofsTimes,Transparency.trans.nTimes,Transparency.trans.ofsKeys,Transparency.trans.nKeys);
+//(int ofsRanges, int nRanges, int ofsTimes, int nTimes, int ofsKeys, int nKeys)
+} ZZZZ;
+FSeek( header.ofsTextures);
+struct ModelTextureDef {
+    enum <uint32> E_TEXTURETYPES { TT_Hardcoded = 0, TT_BodyOrClothes, TT_Cape, TT_HairOrBeard = 6 , TT_TaurenFur = 8, TT_CreatureSkin1 = 11, TT_CreatureSkin2, TT_CreatureSkin3 } type;
+    enum <uint32> E_TEXTUREFLAGS { TF_None = 0, TF_WrapX, TF_WrapY} type;
+	uint32 nameLen;
+	uint32 nameOfs <format=hex>;
+} Textures[header.nTextures];
+
+struct TextureFilenames_ {
+local int i;
+    for(i = 0;i<header.nTextures;i++)
+    {
+        FSeek(Textures[i].nameOfs);
+        struct TNAME {
+            char name[];
+        } Texture;
+    }
+} TextureFilenames;
+
+FSeek( header.ofsLights);
+struct ModelLightDef {
+	int16 type;
+	int16 bone;
+	Vec3D pos;
+	AnimationBlock ambColor;
+	AnimationBlock ambIntensity;
+	AnimationBlock color;
+	AnimationBlock intensity;
+	AnimationBlock attStart;
+	AnimationBlock attEnd;
+	AnimationBlock unk1;
+} Lights[header.nLights];
+
+FSeek( header.ofsCameras);
+struct ModelCameraDef {
+	int32 id;
+	float fov, farclip, nearclip;
+	AnimationBlock transPos;
+	Vec3D pos;
+	AnimationBlock transTarget;
+	Vec3D target;
+	AnimationBlock rot;
+} Cameras[header.nCameras];
+
+
+FSeek( header.ofsParticleEmitters);
+struct ModelParticleEmitterDef {
+    int32 id;
+	int32 flags;
+	Vec3D pos;
+	int16 bone;
+	int16 texture;
+	int32 nModelName;
+	int32 ofsModelName;
+	int32 nZero2;
+	int32 ofsZero2;
+	int16 blend;
+	int16 type;
+	int16 s1;
+	int16 s2;
+	int16 cols;
+	int16 rows;
+	AnimationBlock params[10];
+ struct ModelParticleParams_ {
+	float mid;
+	uint32 colors[3];
+	float sizes[3];
+	int16 d[10];
+	float unk[3];
+	float scales[3];
+	float slowdown;
+	float rotation;	//Sprite Rotation
+	float unknown;
+	float Rot1[3];	//Model Rotation 1
+	float Rot2[3];	//Model Rotation 2
+	float Trans[3];	//Model Translation
+	float f2[6];
+} ModelParticleParams;
+	AnimationBlock en;
+} ParticleEmitters[header.nParticleEmitters];
+
+FSeek( header.ofsRibbonEmitters);
+struct ModelRibbonEmitterDef {
+	int32 id;
+	int32 bone;
+	Vec3D pos;
+	int32 nTextures;
+	int32 ofsTextures;
+	int32 nUnknown;
+	int32 ofsUnknown;
+	AnimationBlock color;
+	AnimationBlock opacity;
+	AnimationBlock above;
+	AnimationBlock below;
+	float res, length, unk;
+	int16 s1, s2;
+	AnimationBlock unk1;
+	AnimationBlock unk2;
+} RibbonEmitters[header.nRibbonEmitters];
+
+FSeek( header.ofsAttachments2);
+struct ModelBlockQ {
+	char id[4];
+	int32 dbid;
+	int32 bone;
+	Vec3D pos;
+	int16 type;
+	int16 seq;
+	uint32 nRanges;
+	uint32 ofsRanges;
+	uint32 nTimes;
+	uint32 ofsTimes;
+} Attachments2[header.nAttachments2];
+
+FSeek( header.ofsAttachments);
+struct ModelAttachmentDef {
+	int32 id;
+	int32 bone;
+	Vec3D pos;
+	AnimationBlock unk;
+} Attachments[header.nAttachments];

@@ -1,0 +1,20 @@
+#include "M2_Types.bt"
+
+int number = 4839;
+int startingAt = 0;
+char bone = 1;
+int offset = 0x0;
+
+    int i;
+    for ( i = startingAt; i < number + startingAt;i++)
+    {
+        FSeek(offset+i*48+0xC);
+        WriteByte( i*48+0xC, 255 );
+        WriteByte( i*48+0xD, 0);
+        WriteByte( i*48+0xE, 0);
+        WriteByte( i*48+0xF, 0);
+        WriteByte( i*48+0x10, bone );
+        WriteByte( i*48+0x11, 0);
+        WriteByte( i*48+0x12, 0);
+        WriteByte( i*48+0x13, 0);
+    }

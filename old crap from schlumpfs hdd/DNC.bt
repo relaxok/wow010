@@ -1,0 +1,36 @@
+//--------------------------------------
+//--- 010 Editor v3.0.2 Binary Template
+//
+// File:
+// Author:
+// Revision:
+// Purpose:
+//--------------------------------------
+int numberEntries;
+int numberEntries2;
+
+struct LIST {
+    int unk;
+    int offset;
+    local int temp = FTell();
+    FSeek(offset);
+    string fieldname;
+    FSeek(temp);
+} Entries[numberEntries] <optimize=false,read=ReadFieldname>;
+
+typedef struct  {
+    int unk;
+    float value;
+} DATA <read=ReadData>;
+
+struct RECORD {
+    DATA Data[numberEntries];
+} Records[24];
+
+string ReadFieldname(LIST &temp) {
+    return temp.fieldname;
+}
+
+string ReadData(DATA &temp) {
+    string s;SPrintf(s,"%f",temp.value);return s;
+}

@@ -1,0 +1,160 @@
+//--------------------------------------
+//--- 010 Editor v3.2.2 Binary Template
+//
+// File:        WMO v17 File
+// Author:      Tharo Herberg
+// Revision:    1
+// Purpose:     Analystics
+//--------------------------------------
+
+struct cHeader {
+    char    magic[4];
+    uint    size;
+};
+
+struct Chunk {
+    char    magic[4];
+    uint    size;
+    if(size>0)
+        ubyte   data[size];
+};
+
+struct MVER {
+    char    magic[4];
+    uint    size;
+    uint    version;
+};
+
+struct MOGP {
+    cHeader header;
+
+    uint nameStart;
+    uint nameStart2;
+    uint flags; 
+	float box1[3];
+    float box2[3]; 
+	ushort portalStart;
+    ushort portalCount;
+	ushort batches[4];
+	ubyte fogs[4];
+	uint32 unk1;
+    uint32 id;
+    uint32 unk2;
+    uint32 unk3;
+};
+
+struct MOPY
+{
+    cHeader header;
+
+    struct {
+	    enum <ubyte> {
+		    _NOCAMCOLLIDE,
+		    _DETAIL,
+ 		    _COLLISION,
+		    _HINT,
+		    _RENDER,
+		    _COLLIDE_HIT,
+            _FREQ_USED_1 = 0x20,
+            _FREQ_USED_2 = 0x40,
+	    } flags;
+        ubyte mtlId;
+    } entrys[header.size/2];
+};
+
+struct MOVI
+{
+    cHeader header;
+    struct {
+        uint16 vertices[3];
+    } entrys[header.size/6];
+};
+
+struct MOVT
+{
+    cHeader header;
+    struct {
+        float vertices[3];
+    } entrys[header.size/12];
+};
+
+struct MONR
+{
+    cHeader header;
+    struct {
+        float normals[3];
+    } entrys[header.size/12];
+};
+
+struct MOTV
+{
+    cHeader header;
+    struct {
+        float coordinates[2];
+    } entrys[header.size/8];
+};
+
+struct MOBA
+{
+    cHeader header;
+
+    struct {
+        uint32 unk[3];
+        uint32 FaceStart;
+        ushort FaceCount;
+	    ushort VertStart;
+	    ushort VertEnd;
+        ubyte null;
+	    ubyte TextIndex;
+    } entrys[header.size/0x18];
+};
+
+struct MOBN
+{	
+    cHeader header;
+
+    if(header.size>=0x10)
+    {
+        struct {
+	        ushort planetype;
+	        ushort children[2];
+	        ushort numfaces;
+	        ushort firstface;
+	        ushort nUnk;
+	        float fDist;
+        } entrys[header.size/0x10];
+    }
+    else {
+        ubyte entrys[header.size];
+    }
+};
+
+struct MOBR
+{
+    cHeader header;
+
+    if(header.size>0)
+    ubyte entrys[header.size];
+};
+
+//------------------------------------------
+
+
+struct FILE {
+    MVER version;
+    MOGP group;
+    
+        MOPY materials;
+        MOVI vertex_indices;
+        MOVT vertices;
+        MONR normals;
+        MOTV text_coordinates;
+
+        MOBA render_batches;
+
+        //Chunk MODR;
+
+        MOBN bsp_nodes;
+
+        MOBR surface_indices;
+} file;

@@ -1,0 +1,118 @@
+//--------------------------------------
+//---- DO NOT TOUCH HERE. JUST RUN -----
+//--------------------------------------
+
+void EulerToQuat()
+{
+    local float _x,  _y,  _z;
+    _x = InputFloat("Enter value for Quaternion", "Rotation in x:", "0.0");
+    _y = InputFloat("Enter value for Quaternion", "Rotation in y:", "0.0");
+    _z = InputFloat("Enter value for Quaternion", "Rotation in z:", "0.0");
+
+		local float rx,ry,rz,tx,ty,tz,cx,cy,cz,sx,sy,sz,cc,cs,sc,ss;
+		
+		rx =  (_x * (float)M_PI) / (360 / 2);
+		ry =  (_y * (float)M_PI) / (360 / 2);
+		rz =  (_y * (float)M_PI) / (360 / 2);
+		
+		tx = rx * (float)0.5;
+		ty = ry * (float)0.5;
+		tz = rz * (float)0.5;
+		cx = (float)Cos(tx);
+		cy = (float)Cos(ty);
+		cz = (float)Cos(tz);
+		sx = (float)Sin(tx);
+		sy = (float)Sin(ty);
+		sz = (float)Sin(tz);
+
+		cc = cx * cz;
+		cs = cx * sz;
+		sc = sx * cz;
+		ss = sx * sz;
+
+		local float x = (cy * sc) - (sy * cs);
+		local float y = (cy * ss) + (sy * cc);
+		local float z = (cy * cs) - (sy * sc);
+		local float w = (cy * cc) + (sy * ss);
+
+	local double norm = Sqrt(x*x + y*y + z*z + w*w);
+
+	x = (x / norm);
+	y = (y / norm);
+	z = (z / norm);
+	w = (w / norm);
+
+
+	w = fix(w);
+	x = fix(x);
+	y = fix(y);
+	z = fix(z);
+
+    Printf("The Euler values are: x=%f, y=%f, z=%f\n",_x,_y,_z);
+    Printf("The Quaternion in floats is: x=%f, y=%f, z=%f, w=%f\n",x,y,z,w);
+    Printf("The Quaternion in shorts is: x=%i, y=%i, z=%i, w=%i\n",fts(x),fts(y),fts(z),fts(w));
+}
+
+void EulerToQuat_(float &_x, float &_y,float &_z,float &_w)
+{
+		local float rx,ry,rz,tx,ty,tz,cx,cy,cz,sx,sy,sz,cc,cs,sc,ss;
+		
+		rx =  (_x * (float)M_PI) / (360 / 2);
+		ry =  (_y * (float)M_PI) / (360 / 2);
+		rz =  (_y * (float)M_PI) / (360 / 2);
+		
+		tx = rx * (float)0.5;
+		ty = ry * (float)0.5;
+		tz = rz * (float)0.5;
+		cx = (float)Cos(tx);
+		cy = (float)Cos(ty);
+		cz = (float)Cos(tz);
+		sx = (float)Sin(tx);
+		sy = (float)Sin(ty);
+		sz = (float)Sin(tz);
+
+		cc = cx * cz;
+		cs = cx * sz;
+		sc = sx * cz;
+		ss = sx * sz;
+
+		local float x = (cy * sc) - (sy * cs);
+		local float y = (cy * ss) + (sy * cc);
+		local float z = (cy * cs) - (sy * sc);
+		local float w = (cy * cc) + (sy * ss);
+
+	local double norm = Sqrt(x*x + y*y + z*z + w*w);
+
+	x = (x / norm);
+	y = (y / norm);
+	z = (z / norm);
+	w = (w / norm);
+
+
+	_w = fix(w);
+	_x = fix(x);
+	_y = fix(y);
+	_z = fix(z);
+
+}
+
+float fix(float test)
+{
+    local float temp = -1;
+    local float temp2 = 1;
+    if(test < temp) {
+        return temp;
+    } else if(test > temp2) {
+        return temp2;
+    } else {
+        return test;
+    }
+}
+
+short fts(float Float) {
+	return (ushort)(Float > 0 ? Float * 32767.0 - 32768 : Float * 32767.0 + 32768);
+}
+
+float stf(short Short) {
+	return (Short > 0 ? Short-32767 : Short+32767)/32767.0;
+}

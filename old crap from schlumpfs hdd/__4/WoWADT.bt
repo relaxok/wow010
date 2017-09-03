@@ -1,0 +1,298 @@
+//-----------------------------------------------------
+//--- 010 Editor v3.0.2 Binary Template
+//
+// File:        WoWADT.bt
+// Authors:     ganku      (ganku.caelestis@gmail.com)
+//              you         (your.e-m@ail.com)
+// Revision:    0.2        2008-Sep-21
+// Purpose:     Quick overfiew for ADT files
+//
+//  Tree:
+//          Global constands
+//      1.  Basic Types
+//      2.  Chunk Def.
+//      3.  ADT File
+//      4.  Global Functions
+//-----------------------------------------------------
+
+// colors for special puposes
+local int cOffset = cLtYellow;
+local int cFileName = cLtAqua;
+local int cVector = cLtPurple;
+
+/*******************************************************
+ *  1.  BASIC TYPES
+*******************************************************/
+
+// basic chunk structure
+//--------------------------------------------------
+typedef struct {
+    // always important to know!
+    local uint32 myOffset = FTell();
+    local uint32 myDataStart = myOffset + 8;
+
+    // color
+    SetColor( cWhite, cDkRed );
+
+    // magic value
+    char magic[4];
+
+    // color #2
+    SetColor( cBlack, 0x99CCFF );
+    
+    // data size
+    uint32 byte_size;
+
+    // normal color plz
+    SetStdColor();
+} _chunk <read=chunkGetMagic>;
+
+    // displays the magic and the size of this chunk
+    string chunkGetMagic(_chunk &c) {
+        string s;
+        SPrintf( s, 
+            "%c%c%c%c: %i Byte", 
+            c.magic[3], c.magic[2], c.magic[1], c.magic[0], c.byte_size
+        ); 
+        return s;
+    };
+
+
+
+// offset including features
+//--------------------------------------------------
+typedef struct {
+    // we store this value for calculations
+    local uint32 upperChunkOffset = 0;
+
+    SetColor( cBlack, cOffset );
+    
+    UINT32 adress   <format=hex>;
+    
+    SetStdColor();
+}offset <read=offsetGetADR>;
+
+    // displays where this pointer is pointing to
+    string offsetGetADR(offset &o) {
+        string s;
+        // just an offset ?
+        if(o.upperChunkOffset==0) {
+            SPrintf( s, "+ %i Byte", o.adress);
+        }
+        // global offset
+        else {
+            // zero?
+            if(o.adress==0) return "- unused - ";
+            SPrintf( s, "-> 0x%02X", o.adress+o.upperChunkOffset);
+        }
+        return s;
+    }
+
+
+// filename - ... because 010 want it so
+//--------------------------------------------------
+typedef struct {
+    SetColor( cBlack, cFileName );
+   
+    string value;
+
+    SetStdColor();
+} filename <read=filenameRead>;
+    
+    string filenameRead(filename &f) {
+        return f.value;
+    };
+
+
+// Vector3D
+//--------------------------------------------------
+typedef struct {
+    SetColor( cBlack, cVector );
+   
+    float x, y, z;
+
+    SetStdColor();
+} Vector3D;
+
+
+
+/*******************************************************
+ *  2.  Chunk Def.
+*******************************************************/
+
+// MVER - Versions Header
+//--------------------------------------------------
+typedef struct {
+        _chunk hdr;
+        unsigned byte version[4] <format=hex>;
+} MVER;
+
+
+// MHDR - ADT Offset Collection
+//--------------------------------------------------
+typedef struct {
+        _chunk hdr;
+          offset pad;
+            pad.upperChunkOffset = hdr.myDataStart;
+          offset offsInfo;
+            offsInfo.upperChunkOffset = hdr.myDataStart;
+          offset offsTex;
+            offsTex.upperChunkOffset = hdr.myDataStart;		
+          offset offsModels;		
+            offsModels.upperChunkOffset = hdr.myDataStart;
+          offset offsModelsIds;
+		     offsModelsIds.upperChunkOffset = hdr.myDataStart;
+          offset offsMapObjects;
+		    offsMapObjects.upperChunkOffset = hdr.myDataStart;
+          offset offsMapObjectsIds;
+		    offsMapObjectsIds.upperChunkOffset = hdr.myDataStart;
+          offset offsDoodsDef;
+		    offsDoodsDef.upperChunkOffset = hdr.myDataStart;
+          offset offsObjectsDef;	
+            offsObjectsDef.upperChunkOffset = hdr.myDataStart;
+          offset offsFlightBoundary; // tbc, wotlk	
+            offsFlightBoundary.upperChunkOffset = hdr.myDataStart;
+          offset offsMH2O; // new in WotLK
+            offsMH2O.upperChunkOffset = hdr.myDataStart;
+          offset pad3;
+            pad3.upperChunkOffset = hdr.myDataStart;
+          offset pad4;
+            pad4.upperChunkOffset = hdr.myDataStart;		
+          offset pad5;
+            pad5.upperChunkOffset = hdr.myDataStart;		
+          offset pad6;
+            pad6.upperChunkOffset = hdr.myDataStart;		
+          offset pad7;
+            pad7.upperChunkOffset = hdr.myDataStart;
+} MHDR;
+
+
+// MCIN - MCNK Offsets
+//--------------------------------------------------
+typedef struct {
+    SetColor( cBlack, cOffset );
+    uint32 adress;
+    SetStdColor();
+
+    uint32 size;
+    uint32 flags;
+    uint32 asyncID;
+} MCIN_Entry<read=mchinEntryRead>;
+    
+    // shows where we point, too.
+    string mchinEntryRead(MCIN_Entry &o) {
+        string s;
+        if(o.adress==0) return "ERROR!!";
+        
+        SPrintf( s, "-> 0x%02X", o.adress);
+        return s;
+    }
+
+
+typedef struct {
+    _chunk hdr;
+    MCIN_Entry entries[256];
+} MCIN;
+
+
+// fileList - Used for any kind of file lists
+// Its unordered with unknown number of items
+// MTEX, MMDF, MWMO
+//--------------------------------------------------
+typedef struct { 
+    _chunk hdr;
+    local int i=0;
+
+    if(hdr.byte_size!=0) {
+        // catch texture files
+        while( FTell() < (hdr.byte_size + hdr.myDataStart) ) {
+            filename texture;
+            i++;
+        }
+    }
+} fileList<read=readFileList>;
+    
+    // how many?
+    string readFileList(fileList &o) {
+        string s;
+        SPrintf( s, "%i Files", o.i);
+        return s;
+    }
+
+
+// offsList - List of many Offsets
+// MMID, MWID
+//--------------------------------------------------
+typedef struct {
+    _chunk hdr;
+    
+    local int i;
+    for(i=0; (i*sizeof(uint32))<hdr.byte_size; i++)
+        offset offs;
+} offsList<read=readOffsList>;
+
+    // how many?
+    string readOffsList(offsList &o) {
+        string s;
+        SPrintf( s, "%i Offsets", o.i);
+        return s;
+    }    
+
+
+// MDDF - Doodad placement infomations 
+//--------------------------------------------------
+typedef struct {
+    uint32 nameID;
+    uint32 uniqueID;
+    Vector3D pos;
+    float rotation[3];
+    uint16 scale;
+    uint16 flags;
+} MDDF_Entry;
+
+typedef struct {
+    _chunk hdr;
+
+    local int i;
+    for(i=0; (i*36)<hdr.byte_size; i++)
+        MDDF_Entry entry;
+} MDDF<read=readMDDFList>;
+ 
+    // how many?
+    string readMDDFList(MDDF &o) {
+        string s;
+        SPrintf( s, "%i Models appear", o.i);
+        return s;
+    }
+
+
+/*******************************************************
+ *  3.  ADT File
+*******************************************************/
+struct ADTFile {
+        MVER mver;  // version
+
+        MHDR mhdr;  // header - all offsets
+        MCIN mcin;  // field offsets
+
+        fileList mtex;  // texture files
+
+        fileList mmdx;  // model files
+        offsList mmid;  // str offsets
+
+        fileList mwmo;  // obj files
+        offsList mwid;  // str offsets
+
+        MDDF mddf;      // model placements
+} adt_file;
+
+
+
+/*******************************************************
+ *  4. Helpers
+*******************************************************/
+    
+    // im soo lazy
+void SetStdColor() {
+    SetColor( cBlack, cWhite );
+}

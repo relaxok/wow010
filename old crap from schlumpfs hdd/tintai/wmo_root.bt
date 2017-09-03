@@ -1,0 +1,147 @@
+//--------------------------------------
+//--- 010 Editor v3.2.2 Binary Template
+//
+// File:        WMO v17 File
+// Author:      Tharo Herberg
+// Revision:    1
+// Purpose:     Analystics
+//--------------------------------------
+
+struct cHeader {
+    char    magic[4];
+    uint    size;
+};
+
+struct Chunk {
+    char    magic[4];
+    uint    size;
+    if(size>0)
+        ubyte   data[size];
+};
+
+struct MVER {
+    char    magic[4];
+    uint    size;
+    uint    version;
+};
+
+struct MOHD
+{
+    cHeader header;
+    UINT32 nTextures;		
+    UINT32 nGroups;		
+    UINT32 nPortals;		
+    UINT32 nLights;		
+    UINT32 nModels;		
+    UINT32 nDoodads;		
+    UINT32 nSets;		
+    ubyte  colR;		
+    ubyte  colG;	
+    ubyte  colB;		
+    ubyte  colX;			
+    UINT32 wmoID;
+    float  bb1[3];
+    float  bb2[3];		
+    UINT32 nullish;	
+};
+
+struct MOTX
+{
+    cHeader header;
+    char    data[header.size];
+};
+
+struct MOMT (int count)
+{
+    cHeader header;
+    struct {
+        UINT32 flags1;
+        UINT32 SpecularMode;
+        UINT32 blendMode;
+        UINT32 ofsTextStart;
+        UINT32 color_1;
+        UINT32 flags_1;
+        UINT32 ofsTextEnd;
+        UINT32 color_2;
+    
+        enum <uint32> {
+            _light      = 0x1,
+            NO_COLLING  = 0x04,
+            _darked     = 0x08,
+            _unshaded   = 0x10,
+            _unk        = 0x20,
+            GL_CLAMP    = 0x40,
+            GL_REPEAT   = 0x80
+        } flags_2;
+    
+        UINT32 color_3; 	
+        UINT32 unk[6];
+        //uint32 runTimeData[4];
+    } entrys[count];
+};
+
+struct MOGN
+{
+    cHeader header;
+    char    data[header.size];
+};
+
+struct MOGI (int count)
+{
+    cHeader header;
+    struct {
+        UINT32 flags;  		
+        float  bb1[3];  		
+        float  bb2[3];
+        UINT32 nameoffset;
+    } entrys[count];
+};
+
+struct MODS (int count)
+{
+    cHeader header;
+    struct {
+        char   name[20];
+        UINT32 firstinstanceindex;
+        UINT32 numDoodads;
+        UINT32 nulls;
+    } entrys[count];
+};
+
+struct MFOG 
+{
+    cHeader header;
+
+    UINT32 flags;		
+    float pos[3];		
+    float start[3];		
+    float end[3];			
+    float fogs[2];
+};
+
+//------------------------------------------
+
+
+struct FILE {
+    MVER version;
+    MOHD header;
+    MOTX files;    
+    MOMT materials(header.nTextures);
+    MOGN group_names;
+    MOGI groups(header.nGroups);
+
+    Chunk MOSB;
+    Chunk MOPV;
+    Chunk MOPT;
+    Chunk MOPR;
+    Chunk MOVV;
+    Chunk MOVB;
+    Chunk MOLT;
+
+    MODS Sets(header.nSets);
+
+    Chunk MODN;
+    Chunk MODD;
+
+    MFOG fog;
+} file;
