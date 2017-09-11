@@ -1,0 +1,118 @@
+//------------------------------------------------
+//--- 010 Editor v8.0 Binary Template
+//
+//      File: 
+//   Authors: 
+//   Version: 
+//   Purpose: 
+//  Category: 
+// File Mask: 
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+#include "basics.h"
+
+void chunk_contents (CHUNK_header& header)
+{
+  switch (header.magic._._)
+  {
+    case 1297499474: // 'MVER'
+      _count = 1;
+ uint32_t version;
+      break;
+    case 1296257603: // 'MCRC'
+      _count = 1;
+ uint32_t _0x00;
+      break;
+    case 1297303620: // 'MSHD'
+      _count = 1;
+ struct {
+   uint32_t _0x00;
+   uint32_t _0x04;
+   uint32_t _0x08;
+   uint32_t _0x0c;
+   uint32_t _0x10;
+   uint32_t _0x14;
+   uint32_t _0x18;
+   uint32_t _0x1c;
+ } header_;
+      break;
+
+    case 1297305686: // 'MSPV'
+      _count = header.size / sizeof(C3Vector);
+ C3Vector msp_vertices[_count];
+      break;
+    case 1297305673: // 'MSPI'
+      _count = header.size / sizeof(uint32_t);
+ uint32_t msp_indices[_count];    // index into [[#MSPV]]
+      break;
+
+    case 1297302350: // 'MSCN'
+      _count = header.size / sizeof(C3Vector);
+ C3Vector mscn[_count];   // n != normals
+      break;
+
+    case 1297307220: // 'MSVT'
+      _count = header.size / sizeof(C3Vector);
+ C3Vector msvt[_count];
+      break;
+    case 1297307209: // 'MSVI'
+      _count = header.size / sizeof(uint32_t);
+ uint32_t msv_indices[_count];    // index into [[#MSVT]]
+      break;
+
+    case 1297304651: // 'MSLK'
+ typedef struct  {
+   uint8_t _0x00;
+   uint8_t _0x01;
+   uint16_t _0x02;
+   uint32_t _0x04;
+   int24_t _0x08;
+   uint8_t _0x0b;
+   uint32_t _0x0c;
+   uint16_t _0x10;
+   uint16_t _0x12;
+ } mslk_t<read=readmslk>;
+      _count = header.size / sizeof (mslk_t);
+ mslk_t mslk[_count];
+      break;
+
+    case 1297306962: // 'MSUR'
+typedef struct {
+   uint8_t _0x00;
+   uint8_t _0x01;
+   uint8_t _0x02;
+   uint8_t _0x03;
+   float _0x04;
+   float _0x08;
+   float _0x0c;
+   float _0x10;
+   uint32_t _0x14;
+   uint32_t _0x18;
+   uint32_t _0x1c;
+ }msur_t<read=readmsur>;
+      _count = header.size / sizeof (msur_t);
+ msur_t msur[_count];
+      break;
+
+    default:
+      char unk[header.size];
+      _known = false;
+      break;
+  }
+}
+
+all_chunks_via_chunk_contents();
+
+string readmslk (mslk_t& mslk)
+{
+string a;
+if (mslk._0x04 != 0) SPrintf(a, "%x", mslk._0x04);
+return a;
+}
+string readmsur (msur_t& msur)
+{
+string a;
+if (msur._0x03 != 0) SPrintf(a, "%x", msur._0x03);
+return a;
+}
