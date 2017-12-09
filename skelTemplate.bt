@@ -1,0 +1,21 @@
+#include "basics.h"
+
+void chunk_contents (CHUNK_header& header)
+{
+  switch (header.magic._._)
+  {
+    case 827083603: // SKL1
+      _count = 1;
+
+      uint32_t _0x00;
+      M2Array_2 name (T_char, header._begin);
+      uint8_t _0x0c[4];
+      break;
+
+    default:
+      _known = false;
+      break;
+  }
+}
+
+all_chunks_via_chunk_contents();

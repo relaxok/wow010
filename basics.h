@@ -330,6 +330,7 @@ typedef struct
 {
   CHUNK_MAGIC magic;
   unsigned int size;
+  local unsigned int _begin = FTell();
 } CHUNK_header <read=readCHUNK_header, optimize=false, size=8>;
 
 string readCHUNK_header(CHUNK_header& rec)
@@ -601,4 +602,28 @@ string T_array_read (int t, int size, int offset)
   }
 
   return "<" + T_print (t) + ">";
+}
+
+// M2Array_2 (M2Array, but with base offset)
+
+typedef struct (int T, int base_offset_)
+{
+  uint32_t num<hidden=true>;
+  uint32_t offs<hidden=true>;
+
+  local int _T = T;
+  local int c = FTell();
+  local int base_offset = base_offset_;
+  FSeek (offs + base_offset);
+  local uint32_t i;
+  for (i = 0; i < num; ++i)
+  {
+    T_resolve (T);
+  }
+  FSeek (c);
+} M2Array_2<read=readM2Array>;
+
+string readM2Array (M2Array_2& a)
+{
+  string s; SPrintf (s, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + a.base_offset)); return s;
 }
