@@ -1,21 +1,742 @@
+//--------------------------------------
+//--- 010 Editor v5.0 Binary Template
+//
+// File:
+// Author:
+// Revision:
+// Purpose:
+//--------------------------------------
+
 #include "basics.h"
+local int startPos = 0;
+// Additional Types & Readers /////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef struct (int T)
+{
+  uint32_t num<hidden=false>;
+  uint32_t offs<hidden=false>;
+
+  local int _T = T;
+  local int c = FTell();
+  FSeek (offs + startPos);
+  local uint32_t i;
+  for (i = 0; i < num; ++i)
+  {
+    T_resolve (T);
+  }
+  FSeek (c);
+} M2Array<read=readM2Array>;
+
+string readM2Array (M2Array& a)
+{
+  string s; SPrintf (s, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + startPos)); return s;
+}
+
+typedef struct (int T, int base_offset_)
+{
+  uint32_t num<hidden=false>;
+  uint32_t offs<hidden=false>;
+
+  local int _T = T;
+  local int c = FTell();
+  local int base_offset = base_offset_;
+  FSeek (offs + base_offset);
+  local uint32_t i;
+  for (i = 0; i < num; ++i)
+  {
+    T_resolve (T);
+  }
+  FSeek (c);
+} M2Array_2<read=readM2Array_2>;
+
+string readM2Array_2 (M2Array_2& a)
+{
+  string s; SPrintf (s, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + a.base_offset)); return s;
+}
+
+typedef C2Vector uv;
+
+struct M2Vertex
+{
+  C3Vector pos;
+  unsigned char bone_weights[4];
+  unsigned char bone_indices[4];
+  C3Vector normal;
+  C2Vector tex_coords[2];  // two textures, depending on shader used
+};
+
+typedef struct
+{
+   float _[9];
+} M2SplineKey;
+
+typedef struct
+{
+   short val[4];
+} M2CompQuat <read=readM2CompQuat>;
+ 
+string readM2CompQuat (M2CompQuat& a)
+{
+  string s; SPrintf (s, "( %d, %d, %d, %d )", a.val[0], a.val[1], a.val[2], a.val[3] ); return s;
+}
+
+typedef struct
+{
+    enum<uint16_t>
+    {
+        NO_INTERPOLATION,
+        LINEAR,
+        HERMITE,
+        BEZIER,
+    } interpolation_type;
+    int16_t global_sequence;
+} M2TrackHead <read=readM2TrackHead>;
+
+string readM2TrackHead( M2TrackHead& a )
+{
+    string s; SPrintf( s, "interpolate: %s, global_seq: %d", EnumToString( a.interpolation_type ), a.global_sequence ); return s;
+}
+
+typedef struct (int T)
+{
+    uint32_t num <hidden=true>;
+    uint32_t offs <hidden=true>;
+    local int _T = T;
+    if( num > 0 )
+    {
+        local int64 c = FTell();
+        FSeek(startPos + offs);
+        FSeek(c);
+    }
+} M2TrackArray <read=readM2TrackArray,optimize=false>;
+
+string readM2TrackArray (M2TrackArray& a)
+{
+  string s;
+  if( a._T == T_uint32_t ) // this type doesn't make sense in the array read anymore
+    SPrintf (s, "%u", a.num );
+  else
+    SPrintf (s, "%u [%s]", a.num, T_array_read (a._T, a.num, a.offs + startPos));
+  
+  return s;
+}
+
+struct M2TrackBase
+{
+  M2TrackHead header;
+if( xpac <= TBC )
+{
+    M2TrackArray interpolation_ranges (T_uint64_t);
+    M2Array timestamps (T_uint32_t);
+}
+else
+{
+    M2TrackArray timestamps (T_uint32_t);
+}
+};
+
+typedef struct (int T)
+{
+    M2TrackHead header;
+  
+    M2TrackArray timestamps (T_uint32_t);
+
+    M2TrackArray keys (T);
+} M2Track;
+
+typedef struct (int T)
+{
+    M2TrackArray timestamps (T_uint16_t);
+
+
+    M2TrackArray keys (T);
+
+} M2TrackNoHeader;
+
+typedef struct
+{
+    char identifier[4];
+    uint32_t data;
+    uint32_t bone;
+    C3Vector position;
+    M2TrackBase anim;
+} M2Event <read=readM2Event,optimize=false>;
+
+string readM2Event( M2Event& a )
+{
+    string s; SPrintf( s, "%c%c%c%c", a.identifier[0], a.identifier[1], a.identifier[2], a.identifier[3] );  return s;
+}
+
+typedef struct
+{
+    enum<uint16_t>
+    {
+        DIRECTIONAL,
+        POINT,
+    } type;
+
+    int16_t bone;
+    C3Vector position;
+    M2Track ambient_color (T_C3Vector);
+    M2Track ambient_intensity (T_float);
+    M2Track diffuse_color (T_C3Vector);
+    M2Track diffuse_intensity (T_float);
+    M2Track attenuation_start (T_float);
+    M2Track attenuation_end (T_float);
+    M2Track attenuation_unknown (T_uint8_t);
+} M2Light <optimize=false>;
+
+typedef struct
+{
+    M2Track color (T_C3Vector);
+    M2Track alpha (T_uint16_t);
+} M2Color <optimize=false>;
+
+typedef struct
+{
+    enum<int32>
+    {
+        FLYBY_ETC = -1,
+        PORTRAIT,
+        CHARACTER_INFO,
+    } type;
+    if( xpac < CATA )
+    {
+        float fov;
+    }
+    float far_clip;
+    float near_clip;
+    M2Track translation_position (T_M2SplineKey); 
+    C3Vector position;
+    M2Track translation_target (T_M2SplineKey);
+    C3Vector target;
+    M2Track roll (T_float); 
+    if( xpac >= CATA )
+    {
+        M2Track fov (T_float);
+    }
+} M2Camera <read=readM2Camera,optimize=false>;
+
+string readM2Camera( M2Camera& a )
+{
+    string s; SPrintf( s, "%s", EnumToString( a.type ) ); return s;
+}
+
+typedef struct
+{
+    int32 _unknown0;
+    uint32_t bone;
+    C3Vector position;
+    M2Array texture_refs (T_uint16_t);
+    M2Array blend_refs (T_uint16_t);
+    M2Track color (T_C3Vector);
+    M2Track opacity (T_uint16_t);
+    M2Track height_above (T_float);
+    M2Track height_below (T_float);
+    float edgesPerSec;
+    float edgeLifeSpanInSec;
+    float gravity;
+    uint16_t m_rows;
+    uint16_t m_cols;
+    M2Track texSlot (T_uint16_t);
+    M2Track dataEnabled (T_uint8_t);
+if( xpac >= WOTLK )
+{
+    uint32_t _unknown1;
+}
+} M2Ribbon <optimize=false>;
+
+typedef struct
+{
+    int32 unk0_always_minus_1;
+    struct
+    {
+        uint32_t LIT : 1;
+        uint32_t UNK_0x2 : 1;
+        uint32_t UNK_0x4 : 1;
+        uint32_t MOVE_IN_WORLD_SPACE : 1;
+        uint32_t DO_NOT_TRAIL : 1;
+        uint32_t UNLIT : 1;
+        uint32_t UNK_0x40 : 1;
+        uint32_t IN_MODEL_SPACE : 1;
+        uint32_t UNK_0x100 : 1;
+        uint32_t SPAWN_POSITION_RANDOMIZED : 1;
+        uint32_t PINNED : 1;
+        uint32_t UNK_0x800 : 1;
+        uint32_t XY_QUAD : 1;
+        uint32_t CLAMP_TO_GROUND : 1;
+        uint32_t UNK_0x4000 : 1;
+        uint32_t UNK_0x8000 : 1;
+        uint32_t CHOOSE_RANDOM_TEXTURE : 1;
+        uint32_t OUTWARD : 1;
+        uint32_t UNK_INWARD : 1;
+        uint32_t SCALE_VARY_XY : 1;
+        uint32_t UNK_0x100000 : 1;
+        uint32_t RANDOM_FLIP_BOOK_START : 1;
+        uint32_t UNK_0x400000 : 1;
+        uint32_t COMPRESSED_GRAVITY_VALUES : 1;
+        uint32_t BONE_GENERATOR_BONE_NOT_JOINT : 1;
+        uint32_t UNK_0x2000000 : 1;
+        uint32_t DO_NOT_THROTTLE_EMISSION_RATE_BASED_ON_DISTANCE : 1;
+        uint32_t UNK_0x8000000 : 1;
+        uint32_t MULTI_TEXTURING : 1;
+    } flags;
+
+    C3Vector position;
+    uint16_t bone;
+    if( flags.MULTI_TEXTURING )
+    {
+        uint16_t texture_0 : 5;
+        uint16_t texture_1 : 5;
+        uint16_t texture_2 : 5;
+        uint16_t _ : 1;
+    }
+    else
+    {
+       uint16_t texture;
+    }
+
+    M2Array model_filename (T_char);
+    M2Array child_emitter_filename (T_char);
+    enum<ubyte>
+    {
+        PARTICLE_BLEND_NONE,
+        PARTICLE_BLEND_SRC_COLOR___ONE,
+        PARTICLE_BLEND_SRC_ALPHA___ONE_MINUS_SRC_ALPHA,
+        PARTICLE_BLEND___ALPHA_TEST,
+        PARTICLE_BLEND_SRC_ALPHA___ONE,
+    } blending_type;
+    enum<ubyte>
+    {
+        PLANE = 1,
+        SPHERE,
+        SPLINE,
+        BONE,
+    } emitter_type;
+    uint16_t particle_color_index;
+    ubyte _unk_0x02c; // was type?
+    ubyte _unk_0x02d; // was headortail?
+    uint16_t texture_tile_rotation;
+    uint16_t texture_dimensions_rows;
+    uint16_t texture_dimensions_columns;
+    M2Track emission_speed (T_float);
+    M2Track speed_variation (T_float);
+    M2Track vertical_range (T_float);
+    M2Track horizontal_range (T_float);
+    M2Track gravity (T_float);
+    M2Track lifespan (T_float);
+    float lifespan_vary;
+    M2Track emission_rate (T_float);
+    float emission_rate_vary;
+    M2Track emission_area_length (T_float);
+    M2Track emission_area_width (T_float);
+    M2Track z_source (T_float);
+    M2TrackNoHeader colorTrack (T_C3Vector);
+    M2TrackNoHeader alphaTrack (T_uint16_t);
+    M2TrackNoHeader scaleTrack (T_C2Vector);
+    C2Vector scale_vary;
+    M2TrackNoHeader headCellTrack (T_uint16_t);
+    M2TrackNoHeader tailCellTrack (T_uint16_t);
+    float something_particle_style;
+    float unk_spread1;
+    float unk_spread2;
+    C2Vector twinkleScale;
+    float unk_;
+    float drag;
+    float base_spin;
+    float base_spin_vary;
+    float spin;
+    float spin_vary;
+    float unk2_;
+    C3Vector model_1_rotation;
+    C3Vector model_2_rotation;
+    C3Vector model_translation;
+    float followParams[4];
+    uint32_t nUnknownReference;
+    uint32_t ofsUnknownReference;
+    M2Track enabled_in (T_uint8_t);
+
+    if( xpac >= CATA )
+    {
+        uint32_t multi_texture_params0[2]; // actually fixed point type
+        uint32_t multi_texture_params1[2]; // actually fixed point type
+    }
+} M2Particle;
+
+typedef struct
+{
+    M2Track weight (T_uint16_t);
+} M2TextureWeight <optimize=false>;
+
+struct M2Sequence
+{
+	uint16_t animation_id;
+	uint16_t sub_animation_id;
+	uint32_t length;
+
+	float moving_speed;
+
+    struct
+    {
+	    uint32_t SETS_0x80_WHEN_LOADED : 1;
+	    uint32_t UNK_0x2	: 1;
+	    uint32_t UNK_0x4	: 1;
+	    uint32_t UNK_0x8 : 1;
+	    uint32_t UNK_0x10 : 1;
+	    uint32_t LOOPED : 1;
+	    uint32_t HAS_NEXT_IS_ALIAS : 1;
+	    uint32_t BLENDED_ANIMATION : 1;
+	    uint32_t UNK_0x100 : 1;
+	    uint32_t UNK_0x200 : 1;
+	    uint32_t UNK_0x400 : 1;
+	    uint32_t UNK_0x800 : 1;
+	    uint32_t UNK_0x1000 : 1;
+	    uint32_t UNK_0x2000 : 1;
+	    uint32_t UNK_0x4000 : 1;
+	    uint32_t UNK_0x8000 : 1;
+    } Flags;
+
+	int16_t probability;
+	uint16_t _padding;
+	uint32_t minimum_repetitions;
+	uint32_t maximum_repetitions;
+	uint32_t blend_time;
+	C3Vector bounds_minimum_extent;
+	C3Vector bounds_maximum_extent;
+	float bound_radius;
+	int16_t next_animation;
+	uint16_t aliasNext;
+};
+
+struct M2Loop
+{
+  uint32_t timestamp;
+};
+
+typedef struct
+{
+    enum<uint32_t>
+    {
+        SHIELD = 0,
+        MOUNTMAIN = 0,
+        ITEM_VISUAL_0 = 0,
+        HAND_RIGHT = 1,
+        ITEM_VISUAL_1 = 1,
+        HAND_LEFT = 2,
+        ITEM_VISUAL_2 = 2,
+        ELBOW_RIGHT = 3,
+        ITEM_VISUAL_3 = 3,
+        ELBOW_LEFT = 4,
+        ITEM_VISUAL_4 = 4,
+        SHOULDER_RIGHT,
+        SHOULDER_LEFT,
+        KNEE_RIGHT,
+        KNEE_LEFT,
+        HIP_RIGHT,
+        HIP_LEFT,
+        HELM,
+        BACK,
+        SHOULDER_FLAP_RIGHT,
+        SHOULDER_FLAP_LEFT,
+        CHEST_BLOOD_FRONT,
+        CHEST_BLOOD_BACK,
+        BREATH,
+        PLAYER_NAME,
+        BASE,
+        HEAD_,
+        SPELL_LEFT_HAND,
+        SPELL_RIGHT_HAND,
+        SPECIAL_1,
+        SPECIAL_2,
+        SPECIAL_3,
+        SHEATH_MAIN_HAND,
+        SHEATH_OFF_HAND,
+        SHEATH_SHIELD,
+        PLAYER_NAME_MOUNTED,
+        LARGE_WEAPON_LEFT,
+        LARGE_WEAPON_RIGHT,
+        HIP_WEAPON_LEFT,
+        HIP_WEAPON_RIGHT,
+        CHEST,
+        HAND_ARROW,
+        BULLET,
+        SPELL_HAND_OMNI,
+        SPELL_HAND_DIRECTED,
+        VEHICLE_SEAT_1,
+        VEHICLE_SEAT_2,
+        VEHICLE_SEAT_3,
+        VEHICLE_SEAT_4,
+        VEHICLE_SEAT_5,
+        VEHICLE_SEAT_6,
+        VEHICLE_SEAT_7,
+        VEHICLE_SEAT_8,
+        LEFT_FOOT,
+        RIGHT_FOOT,
+        SHIELD_NO_GLOVE,
+        SPINE_LOW_,
+        ALTERED_SHOULDER_R,
+        ALTERED_SHOULDER_L,
+        BELT_BUCKLE,
+        SHEATH_CROSSBOW,
+    } id;
+
+    uint32_t bone;
+    C3Vector position;
+    M2Track anim (T_uint8_t);
+} M2Attachment <read=readM2Attachment,optimize=false>;
+
+string readM2Attachment( M2Attachment& a )
+{
+    string s; SPrintf( s, "%s", EnumToString( a.id ) ); return s;
+}
+
+typedef struct
+{
+    M2Track translation (T_C3Vector); 
+    M2Track rotation (T_C4Vector); 
+    M2Track scaling (T_C3Vector); 
+} M2TextureTransform <optimize=false>;
+
+typedef struct
+{
+    struct 
+    {
+        uint16_t UNLIT : 1;
+        uint16_t UNFOGGED : 1;
+        uint16_t TWOSIDED : 1;
+        uint16_t BILLBOARD : 1;
+        uint16_t DISABLE_ZBUFFER : 1;
+        uint16_t UNK_0x20 : 1;
+        uint16_t UNK_0x40_SHADOW_BATCH_RELATED : 1;
+        uint16_t UNK_0x80_SHADOW_BATCH_RELATED : 1;
+        uint16_t UNK_0x100 : 1;
+        uint16_t UNK_0x200 : 1;
+        uint16_t UNK_0x400 : 1;
+        uint16_t PREVENT_ALPHA: 1;
+    } flags;
+    enum<uint16_t>
+    {
+        OPAQUE,
+        MOD,
+        DECAL,
+        ADD,
+        MOD2X,
+        FADE,
+        DEEPRUN_TRAM,
+        UNK_WOD,
+    } blend_mode;
+} M2Material <read=readM2Material>;
+
+string readM2Material( M2Material& a )
+{
+    string flagsStr;
+    if( a.flags.UNLIT ) flagsStr += "UNLIT  ";
+    if( a.flags.UNFOGGED ) flagsStr += "UNFOGGED  ";
+    if( a.flags.TWOSIDED ) flagsStr += "TWOSIDED  ";
+    if( a.flags.BILLBOARD ) flagsStr += "BILLBOARD  ";
+    if( a.flags.DISABLE_ZBUFFER ) flagsStr += "DISABLE_ZBUFFER  ";
+
+    if( flagsStr == "" ) flagsStr = "NONE";
+    
+    string s; SPrintf( s, "blend: %s, flags: %s", EnumToString( a.blend_mode ), flagsStr ); return s;
+}
+
+typedef struct
+{
+    enum<uint32_t>
+    {
+        GIVEN_IN_FILENAME,
+        BODY_AND_CLOTHES,
+        ITEM,
+        WEAPON_BLADE,
+        WEAPON_HANDLE,
+        ENVIRONMENT,
+        CHARACTER_HAIR,
+        CHARACTER_FACIAL_HAIR,
+        SKIN_EXTRA,
+        UI_SKIN,
+        TAUREN_MANE,
+        CREATURE_SKIN_1,
+        CREATURE_SKIN_2,
+        CREATURE_SKIN_3,
+        ITEM_ICON,
+        GUILD_BACKGROUND_COLOR,
+        GUILD_EMBLEM_COLOR,
+        GUILD_BORDER_COLOR,
+        GUILD_EMBLEM,
+    } type;
+    struct
+    {
+        uint32_t TEXTURE_WRAP_X : 1;
+        uint32_t TEXTURE_WRAP_Y : 1;
+    } flags;
+    M2Array filename (T_char);
+} M2Texture <read=readM2Texture>;
+
+string readM2Texture( M2Texture& a )
+{
+  local int64 pos = FTell();
+  FSeek( a.filename.offs + startPos );
+  string filenameStr = ReadString( FTell() );
+  string s = EnumToString(a.type);
+  if( filenameStr != "" ) s = filenameStr;
+  
+  return s;
+}
+
+typedef struct
+{
+    int32 key_bone_id;
+
+    struct
+    {
+	    uint32_t UNK_0x1 : 1;
+	    uint32_t UNK_0x2 : 1;
+	    uint32_t UNK_0x4 : 1;
+	    uint32_t SPHERICAL_BILLBOARD : 1;
+	    uint32_t CYLINDRICAL_BILLBOARD_LOCK_X : 1;
+	    uint32_t CYLINDRICAL_BILLBOARD_LOCK_Y : 1;
+	    uint32_t CYLINDRICAL_BILLBOARD_LOCK_Z : 1;
+	    uint32_t UNK_0x80 : 1;
+	    uint32_t UNK_0x100 : 1;
+	    uint32_t TRANSFORMED : 1;
+	    uint32_t KINEMATIC_BONE : 1;
+	    uint32_t UNK_0x800 : 1;
+	    uint32_t HELMET_ANIM_SCALED : 1;
+    } flags;
+
+    int16_t parent_bone;
+    uint16_t submesh_id;
+    M2Track rotation (T_M2CompQuat);
+    M2Track scale (T_C3Vector);
+    C3Vector pivot;
+} M2Bone <optimize=false>;
+
+typedef struct
+{
+if( xpac >= WOTLK )
+{
+    uint32_t magic;                         // 'SKIN'
+}
+    M2Array indices (T_uint16_t);
+    M2Array triangles (T_uint16_t);
+    M2Array properties (T_uint32_t);
+    M2Array submeshes (T_uint32_t);
+    M2Array batches (T_uint32_t);
+    uint32_t bones;
+if( xpac >= CATA )
+{
+    M2Array shadow_batches (T_uint32_t);
+}
+} M2SkinProfile <optimize=true>;
+
+
+// M2Array related ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+enum
+{
+  _ = T_extra_begin,
+  T_M2Attachment,
+  T_M2Bone,
+  T_M2Camera,
+  T_M2Color,
+  T_M2CompQuat,
+  T_M2Event,
+  T_M2Light,
+  T_M2Material,
+  T_M2Particle,
+  T_M2Ribbon,
+  T_M2Sequence,
+  T_M2SkinProfile,
+  T_M2SplineKey,
+  T_M2Texture,
+  T_M2TextureTransform,
+  T_M2TextureWeight,
+  T_M2Vertex,
+  T_M2Loop,
+};
+
+void T_resolve_extra (int T)
+{
+  switch (T)
+  {
+    case T_M2Attachment: M2Attachment _; break;
+    case T_M2Bone: M2Bone _; break;
+    case T_M2Camera: M2Camera _; break;
+    case T_M2Color: M2Color _; break;
+    case T_M2CompQuat: M2CompQuat _; break;
+    case T_M2Event: M2Event _; break;
+    case T_M2Light: M2Light _; break;
+    case T_M2Material: M2Material _; break;
+    case T_M2Particle: M2Particle _; break;
+    case T_M2Ribbon: M2Ribbon _; break;
+    case T_M2Sequence: M2Sequence _; break;
+    case T_M2SkinProfile : M2SkinProfile _; break;
+    case T_M2SplineKey: M2SplineKey _; break;
+    case T_M2Texture: M2Texture _; break;
+    case T_M2TextureTransform: M2TextureTransform _; break;
+    case T_M2TextureWeight: M2TextureWeight _; break;
+    case T_M2Vertex: M2Vertex _; break;
+	case T_M2Loop: M2Loop _; break;
+    default: Assert (false);
+  }
+}
+string T_print_extra (int T)
+{
+  switch (T)
+  {
+    case T_M2Attachment: return "M2Attachment";
+    case T_M2Bone: return "M2Bone";
+    case T_M2Camera: return "M2Camera";
+    case T_M2Color: return "M2Color";
+    case T_M2CompQuat: return "M2CompQuat";
+    case T_M2Event: return "M2Event";
+    case T_M2Light: return "M2Light";
+    case T_M2Material: return "M2Material";
+    case T_M2Particle: return "M2Particle";
+    case T_M2Ribbon: return "M2Ribbon";
+    case T_M2Sequence: return "M2Sequence";
+    case T_M2SkinProfile: return "M2SkinProfile";
+    case T_M2SplineKey: return "M2SplineKey";
+    case T_M2Texture: return "M2Texture";
+    case T_M2TextureTransform: return "M2TextureTransform";
+    case T_M2TextureWeight: return "M2TextureWeight";
+    case T_M2Vertex: return "M2Vertex";
+	case T_M2Loop: return "M2Loop";
+    default: Assert (false);
+  }
+}
 
 void chunk_contents (CHUNK_header& header)
 {
-  switch (header.magic._._)
-  {
-    case 827083603: // SKL1
-      _count = 1;
-
-      uint32_t _0x00;
-      M2Array_2 name (T_char, header._begin);
-      uint8_t _0x0c[4];
-      break;
-
-    default:
-      _known = false;
-      break;
-  }
+	if (header.magic._._ == 827083603) // SKL1
+	{
+		uint32_t _0x00;
+		M2Array_2 name (T_char, header._begin);
+		uint8_t _0x0c[4];
+	}
+	else if (header.magic._._ == 827542355) // SKS1
+	{
+		M2Array_2 global_loops (T_M2Loop, header._begin);
+		M2Array_2 sequences (T_M2Sequence, header._begin);
+		M2Array_2 sequence_lookups (T_uint16_t, header._begin);
+		uint8_t _0x18[8];
+	}	
+	else if (header.magic._._ == 826428243) // SKB1
+	{
+		M2Array_2 bones (T_M2Bone, header._begin);
+		M2Array_2 key_bone_lookup (T_uint16_t, header._begin);
+	}	
+	else if (header.magic._._ == 826362707) // SKA1
+	{
+		M2Array_2 attachments (T_M2Attachment, header._begin);
+		M2Array_2 attachment_lookup_table (T_uint16_t, header._begin);
+	}	
+	else if (header.magic._._ == 826362707) // SKA1
+	{
+		M2Array_2 attachments (T_M2Attachment, header._begin);
+		M2Array_2 attachment_lookup_table (T_uint16_t, header._begin);
+	}
 }
 
 all_chunks_via_chunk_contents();
