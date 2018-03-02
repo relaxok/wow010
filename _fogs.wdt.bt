@@ -1,0 +1,31 @@
+#include "basics.h"
+
+local int chunk_data_pos = 0;
+
+void chunk_contents (CHUNK_header& header)
+{
+  chunk_data_pos = FTell();
+  switch (header.magic._._)
+  {
+case 1297499474: // MVER
+    uint32_t version;
+break;
+
+case 1447448391: // VFOG
+ typedef struct {
+C3Vector _unk00; // 0…1
+float _unk0c[3];
+char _unk18[4];
+C3Vector _unk1c; // position?
+char _unk_28[0x3c];
+uint32_t _unk64;
+ } vfog;
+ vfog volumetric_fogs[_count = header.size / sizeof(vfog)];
+
+    default:
+      _known = false;
+      break;
+  }
+}
+
+all_chunks_via_chunk_contents();
