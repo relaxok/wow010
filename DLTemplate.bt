@@ -1,0 +1,54 @@
+#include <basics.h>
+
+          enum {
+            download_version_1 = 1,
+            download_version_2 = 2,                        //  Legion (7.3.0.???)
+            download_version_3 = 3,
+          };
+struct {
+/*0x00*/  char signature[2];                                  // "DL"
+/*0x02*/  uint8_BE_t version;
+/*0x03*/  uint8_BE_t hash_size_ekey;
+/*0x04*/  uint8_BE_t _unknown_04;
+/*0x05*/  uint32_BE_t entry_count;
+/*0x09*/  uint16_BE_t tag_count;
+/*0x0b*/
+
+if (version >= download_version_2) {
+/*0x0b*/  uint8_BE_t number_of_flag_bytes;                // defaults to 0, up to 4
+/*0x0c*/
+
+if (version >= download_version_3) {
+/*0x0c*/  uint8_BE_t base_priority;                       // defaults to 0
+/*0x0d*/  char _unknown_0d[3];                             // four extra bytes are read in v3 but only one is used
+/*0x10*/
+}
+}
+} header;
+
+struct {
+/*0x00*/  char ekey[header.hash_size_ekey];
+/*0x10*/  uint40_BE_t file_size;
+/*0x15*/  uint8_BE_t priority;                             // header.base_priority is subtracted on parse
+/*0x16*/
+
+if (header._unknown_04) {
+/*0x16*/  uint32_BE_t _unknown_16;
+/*0x1a*/
+}
+
+if (header.version >= download_version_2) {
+          uint8_BE_t flags[header.number_of_flag_bytes];   // defaults to 0 if no flag bytes present
+}
+
+} entries[header.entry_count._];
+
+uint divru (uint lhs, uint rhs) { return (lhs + rhs + 1) / rhs; }
+#define CHAR_BIT 8
+
+struct {
+         string name;                                // this string is zero terminated, no fixed size
+                                                           // thus for readability we start offset at 0 here.
+/*0x00*/ uint16_BE_t type;                    
+/*0x02*/ char mask[divru (header.entry_count._, CHAR_BIT)];             
+} tags[header.tag_count._]<optimize=false>;

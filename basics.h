@@ -7,6 +7,8 @@ typedef short int16_t;
 typedef unsigned char uint8_t;
 typedef signed char int8_t;
 
+typedef uint8_t uint8_BE_t;
+
 typedef struct
 {
   unsigned char _0;
@@ -81,6 +83,9 @@ string read_uint16_t_BE (uint16_t_BE& ref)
   SPrintf (a, "%u", ref._);
   return a;
 }
+typedef uint16_t_BE uint16_BE_t;
+typedef uint32_t_BE uint32_BE_t;
+typedef uint40_t_BE uint40_BE_t;
 
 // stringref -------------------------------------------------------------------
 
