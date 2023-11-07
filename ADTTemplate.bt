@@ -460,7 +460,6 @@ else if (header.magic._._ == 1296320836) // MDID
 else if (header.magic._._ == 1296582980) // MHID
 {
   uint32_t height_texture_file_data_ids[header.size / sizeof (uint32_t)]; // _h.blp; 0 if there is none
-  assert(sizeof(diffuse_texture_file_data_ids) == sizeof(height_texture_file_data_ids));
 }
   else
   {
