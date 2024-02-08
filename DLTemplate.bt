@@ -43,7 +43,7 @@ if (header.version >= download_version_2) {
 
 } entries[header.entry_count._];
 
-uint divru (uint lhs, uint rhs) { return (lhs + rhs + 1) / rhs; }
+uint divru (uint lhs, uint rhs) { return (lhs + rhs - 1) / rhs; }
 #define CHAR_BIT 8
 
 struct {
